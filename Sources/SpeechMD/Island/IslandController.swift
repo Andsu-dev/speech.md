@@ -19,6 +19,14 @@ final class IslandController {
         }
     }
 
+    var result: String? {
+        didSet {
+            guard result != oldValue else { return }
+            render()
+            scheduleResultDismissal()
+        }
+    }
+
     private var elapsed: TimeInterval = 0 {
         didSet { render() }
     }
@@ -27,9 +35,11 @@ final class IslandController {
     private var hostingView: NSHostingView<DynamicIslandView>?
     private var ticker: Timer?
     private var warningDismissal: Task<Void, Never>?
+    private var resultDismissal: Task<Void, Never>?
 
     /// Quanto tempo um aviso fica na tela antes de sumir sozinho.
     private static let warningDuration: Duration = .seconds(3)
+    private static let resultDuration: Duration = .seconds(15)
 
 
     /// Mostra um aviso que se apaga sozinho — usado quando não há nem sessão
@@ -53,6 +63,31 @@ final class IslandController {
             if !isSessionActive {
                 isVisible = false
             }
+        }
+    }
+
+    func showResult(_ text: String) {
+        warning = nil
+        result = text
+        isVisible = true
+    }
+
+    private func scheduleResultDismissal() {
+        resultDismissal?.cancel()
+        guard result != nil else { return }
+
+        resultDismissal = Task { [weak self] in
+            try? await Task.sleep(for: Self.resultDuration)
+            guard !Task.isCancelled, let self else { return }
+            dismissResult()
+        }
+    }
+
+    private func dismissResult() {
+        resultDismissal?.cancel()
+        result = nil
+        if !isSessionActive {
+            isVisible = false
         }
     }
 
@@ -85,17 +120,36 @@ final class IslandController {
 
         let notchWidth = notchWidth()
         let view = DynamicIslandView(
+            isListening: isSessionActive,
             elapsed: elapsed,
             notchWidth: notchWidth,
             warning: warning,
-            warningDuration: TimeInterval(Self.warningDuration.components.seconds)
+            countdownDuration: TimeInterval(
+                (result == nil ? Self.warningDuration : Self.resultDuration).components.seconds
+            ),
+            result: result,
+            onCopy: { [weak self] in
+                guard let self, let text = result else { return }
+                NSPasteboard.general.clearContents()
+                NSPasteboard.general.setString(text, forType: .string)
+                resultDismissal?.cancel()
+                resultDismissal = Task { [weak self] in
+                    try? await Task.sleep(for: .milliseconds(420))
+                    guard !Task.isCancelled else { return }
+                    self?.dismissResult()
+                }
+            }
         )
 
         // painel sempre no tamanho máximo (com aviso); a pill cresce dentro dele
+        let pillWidth = notchWidth + DynamicIslandView.earWidth
+            + DynamicIslandView.warningEarWidth + 24
+        let bubbleHeight = result.map {
+            DynamicIslandView.resultHeight(for: $0, notchWidth: notchWidth)
+        } ?? 0
         let size = NSSize(
-            width: notchWidth + DynamicIslandView.earWidth
-                + DynamicIslandView.warningEarWidth + 24,
-            height: DynamicIslandView.height + 24
+            width: max(pillWidth, DynamicIslandView.resultWidth(notchWidth: notchWidth) + 24),
+            height: DynamicIslandView.height + 24 + bubbleHeight
         )
 
         if let existing = hostingView {
@@ -124,6 +178,7 @@ final class IslandController {
             panel.setFrame(frame, display: true)
         }
 
+        panel.ignoresMouseEvents = result == nil
         panel.orderFrontRegardless()
     }
 

@@ -72,6 +72,7 @@ struct SnippetsView: View {
                 .background(.white, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
             }
             .buttonStyle(.plain)
+            .pointerStyle(.link)
         }
         .padding(.horizontal, 22)
         .padding(.vertical, 18)
@@ -136,6 +137,7 @@ private struct SnippetRow: View {
                 }
             }
             .buttonStyle(.plain)
+            .pointerStyle(.link)
             .opacity(isHovering ? 1 : 0)
         }
         .padding(.horizontal, 18)

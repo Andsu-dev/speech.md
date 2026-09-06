@@ -76,9 +76,9 @@ struct MeetingFeedView: View {
                 if capturesSystemAudio {
                     HStack(spacing: 8) {
                         Button {
-                            SystemPermission.screenRecording.openSettings()
+                            SystemPermission.screenRecording.requestIfPossible()
                         } label: {
-                            Text("Abrir Ajustes")
+                            Text("Permitir")
                                 .font(.system(size: 12, weight: .semibold))
                                 .foregroundStyle(.white)
                                 .padding(.horizontal, 12)
@@ -86,6 +86,7 @@ struct MeetingFeedView: View {
                                 .background(Theme.textPrimary, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
                         }
                         .buttonStyle(.plain)
+                        .pointerStyle(.link)
 
                         Button("Gravar só meu microfone", action: onUseMicrophoneOnly)
                             .font(.system(size: 12))
@@ -145,6 +146,7 @@ struct MeetingFeedView: View {
                 .background(.white, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
             }
             .buttonStyle(.plain)
+            .pointerStyle(.link)
         }
         .padding(.horizontal, 22)
         .padding(.vertical, 18)

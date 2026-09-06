@@ -98,6 +98,7 @@ struct DictationView: View {
                 .background(.white, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
             }
             .buttonStyle(.plain)
+            .pointerStyle(.link)
         }
         .padding(.horizontal, 22)
         .padding(.vertical, 18)
@@ -148,9 +149,8 @@ struct DictationView: View {
             Spacer(minLength: 12)
             Button {
                 SystemPermission.accessibility.requestIfPossible()
-                SystemPermission.accessibility.openSettings()
             } label: {
-                Text("Abrir Ajustes")
+                Text("Permitir")
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(.white)
                     .padding(.horizontal, 14)
@@ -158,6 +158,7 @@ struct DictationView: View {
                     .background(Theme.textPrimary, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
             }
             .buttonStyle(.plain)
+            .pointerStyle(.link)
         }
         .padding(16)
         .background(Theme.highlight.opacity(0.1), in: RoundedRectangle(cornerRadius: Theme.cardRadius, style: .continuous))
@@ -222,6 +223,7 @@ private struct DictationRow: View {
                 }
             }
             .buttonStyle(.plain)
+            .pointerStyle(.link)
             .opacity(isHovering ? 1 : 0)
         }
         .padding(.horizontal, 18)
