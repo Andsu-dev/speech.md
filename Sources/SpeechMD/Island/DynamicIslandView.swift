@@ -10,6 +10,7 @@ struct DynamicIslandView: View {
     /// Segundos até o aviso sumir — a barra drena nesse tempo.
     var countdownDuration: TimeInterval = 3
     var result: String?
+    var isProcessing = false
     var isClosing = false
     var onCopy: (() -> Void)?
 
@@ -80,7 +81,14 @@ struct DynamicIslandView: View {
     /// o mesmo ponto da tela conta quanto falta pra ilha fechar.
     @ViewBuilder
     private var leftEar: some View {
-        if warning != nil {
+        if isProcessing {
+            ProgressView()
+                .progressViewStyle(.circular)
+                .controlSize(.small)
+                .tint(.white)
+                .scaleEffect(0.62)
+                .frame(width: 15, height: 15)
+        } else if warning != nil {
             CountdownRing(progress: drain)
                 .frame(width: 15, height: 15)
                 .onAppear {

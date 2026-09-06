@@ -53,6 +53,7 @@ struct NotetakerShell: View {
         }
         .onChange(of: dictation.outcome) { _, outcome in
             guard let outcome else { return }
+            island.isProcessing = false
             if outcome.needsCopy {
                 island.showResult(outcome.text)
                 playFeedback(.warning)
@@ -175,6 +176,7 @@ struct NotetakerShell: View {
         dictation.finish()
         island.isSessionActive = false
         island.warning = nil
+        island.isProcessing = true
     }
 
     private func playFeedback(_ kind: Feedback.Kind) {

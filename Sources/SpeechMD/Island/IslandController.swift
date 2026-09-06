@@ -28,6 +28,13 @@ final class IslandController {
         }
     }
 
+    var isProcessing = false {
+        didSet {
+            guard isProcessing != oldValue else { return }
+            render()
+        }
+    }
+
     private var isClosing = false {
         didSet {
             guard isClosing != oldValue else { return }
@@ -148,6 +155,7 @@ final class IslandController {
                 (result == nil ? Self.warningDuration : Self.resultDuration).components.seconds
             ),
             result: result,
+            isProcessing: isProcessing,
             isClosing: isClosing,
             onCopy: { [weak self] in
                 guard let self, let text = result else { return }
