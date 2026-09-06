@@ -51,7 +51,7 @@ struct SnippetsView: View {
                 Text("Dicionário")
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(.white)
-                Text("Fale o atalho e ele vira o texto completo — email, link, prompt que você repete sempre.")
+                Text("Fale o atalho e ele vira o texto completo: email, link, prompt que você repete sempre.")
                     .font(.system(size: 12))
                     .foregroundStyle(.white.opacity(0.7))
                     .fixedSize(horizontal: false, vertical: true)

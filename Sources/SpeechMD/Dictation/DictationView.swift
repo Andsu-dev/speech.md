@@ -69,7 +69,7 @@ struct DictationView: View {
                 Text(headerTitle)
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(.white)
-                Text("Segure o atalho e fale — ao soltar, o texto é colado no app em foco. Um toque curto mantém ouvindo até o toque seguinte.")
+                Text("Segure o atalho e fale, ao soltar o texto é colado no app em foco. Um toque curto mantém ouvindo até o toque seguinte.")
                     .font(.system(size: 12))
                     .foregroundStyle(.white.opacity(0.7))
                     .fixedSize(horizontal: false, vertical: true)
