@@ -51,10 +51,17 @@ struct NotetakerShell: View {
             island.flashWarning(String(message.prefix(28)))
             playFeedback(.warning)
         }
-        .onChange(of: dictation.undelivered) { _, dictated in
-            guard let dictated else { return }
-            island.showResult(dictated.text)
-            playFeedback(.warning)
+        .onChange(of: dictation.outcome) { _, outcome in
+            guard let outcome else { return }
+            if outcome.needsCopy {
+                island.showResult(outcome.text)
+                playFeedback(.warning)
+            } else {
+                island.isVisible = false
+                if !outcome.text.isEmpty {
+                    playFeedback(.finish)
+                }
+            }
         }
         .onChange(of: model.phase) { _, phase in
             guard case .failed = phase else { return }
@@ -165,15 +172,9 @@ struct NotetakerShell: View {
     }
 
     private func finishDictation() {
-        let hadTarget = dictation.hasEditableTarget
-        let spoke = !dictation.liveText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         dictation.finish()
         island.isSessionActive = false
         island.warning = nil
-        island.isVisible = false
-        if spoke, hadTarget {
-            playFeedback(.finish)
-        }
     }
 
     private func playFeedback(_ kind: Feedback.Kind) {

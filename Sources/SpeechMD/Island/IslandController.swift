@@ -107,7 +107,12 @@ final class IslandController {
     }
 
     /// Ligado por quem controla a sessão; enquanto true a ilha permanece.
-    var isSessionActive = false
+    var isSessionActive = false {
+        didSet {
+            guard isSessionActive != oldValue else { return }
+            if !isSessionActive { stopTicker() }
+        }
+    }
 
     private func startTicker() {
         elapsed = 0

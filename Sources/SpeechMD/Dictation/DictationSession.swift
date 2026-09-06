@@ -8,6 +8,12 @@ struct Dictation: Identifiable, Equatable {
     let createdAt: Date
 }
 
+struct DictationOutcome: Identifiable, Equatable {
+    let id = UUID()
+    let text: String
+    let needsCopy: Bool
+}
+
 /// Ditado estilo Wispr Flow: fala em qualquer app, o texto é colado lá.
 @MainActor
 @Observable
@@ -54,7 +60,7 @@ final class DictationSession {
 
     var hasEditableTarget: Bool { targetIssue == nil }
 
-    private(set) var undelivered: Dictation?
+    private(set) var outcome: DictationOutcome?
 
     private var pipeline: SpeechPipeline?
     private var startTask: Task<Void, Never>?
@@ -113,19 +119,22 @@ final class DictationSession {
 
             let raw = liveText.trimmingCharacters(in: .whitespacesAndNewlines)
             liveText = ""
-            guard !raw.isEmpty else { return }
+            guard !raw.isEmpty else {
+                outcome = DictationOutcome(text: "", needsCopy: false)
+                return
+            }
 
             var text = expand(raw)
             if formatAsMarkdown {
                 text = await TranscriptFormatter.format(text)
             }
-            let dictation = Dictation(text: text, createdAt: Date())
-            history.insert(dictation, at: 0)
+            history.insert(Dictation(text: text, createdAt: Date()), at: 0)
             guard hasEditableTarget else {
-                undelivered = dictation
+                outcome = DictationOutcome(text: text, needsCopy: true)
                 return
             }
             await TextInserter.insert(text, into: target)
+            outcome = DictationOutcome(text: text, needsCopy: false)
         }
     }
 }
