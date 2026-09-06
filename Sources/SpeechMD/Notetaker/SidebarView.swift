@@ -4,6 +4,8 @@ struct SidebarView: View {
     @Binding var selection: NavSection
     @Binding var isCollapsed: Bool
 
+    @Namespace private var selectionPill
+
     private var width: CGFloat { isCollapsed ? 64 : 236 }
 
     var body: some View {
@@ -20,6 +22,7 @@ struct SidebarView: View {
                         section: section,
                         isSelected: section == selection,
                         isCollapsed: isCollapsed,
+                        namespace: selectionPill,
                         action: { selection = section }
                     )
                 }
@@ -33,6 +36,7 @@ struct SidebarView: View {
                     section: .settings,
                     isSelected: selection == .settings,
                     isCollapsed: isCollapsed,
+                    namespace: selectionPill,
                     action: { selection = .settings }
                 )
                 LinkRow(title: "GitHub", icon: BrandIcon.github, url: Links.repository, isCollapsed: isCollapsed)
@@ -50,6 +54,7 @@ struct SidebarView: View {
                 .frame(maxWidth: isCollapsed ? .infinity : nil, alignment: isCollapsed ? .center : .trailing)
         }
         .animation(.spring(response: 0.32, dampingFraction: 0.85), value: isCollapsed)
+        .animation(.spring(response: 0.34, dampingFraction: 0.78), value: selection)
     }
 
     private var brand: some View {
@@ -78,6 +83,7 @@ struct SidebarView: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .pointerStyle(.link)
         .help(isCollapsed ? "Expandir barra lateral" : "Recolher barra lateral")
     }
 }
@@ -86,6 +92,7 @@ private struct NavRow: View {
     let section: NavSection
     let isSelected: Bool
     let isCollapsed: Bool
+    let namespace: Namespace.ID
     let action: () -> Void
 
     @State private var isHovering = false
@@ -94,8 +101,10 @@ private struct NavRow: View {
         Button(action: action) {
             HStack(spacing: 11) {
                 Image(systemName: section.systemImage)
-                    .font(.system(size: 14, weight: .medium))
+                    .font(.system(size: 14, weight: isSelected ? .semibold : .medium))
                     .frame(width: 19)
+                    .scaleEffect(isSelected ? 1.06 : 1)
+                    .symbolEffect(.bounce, options: .speed(1.4), isActive: isSelected)
                 if !isCollapsed {
                     Text(section.rawValue)
                         .font(.system(size: 14, weight: isSelected ? .semibold : .regular))
@@ -108,19 +117,23 @@ private struct NavRow: View {
             .padding(.horizontal, isCollapsed ? 0 : 11)
             .padding(.vertical, 9)
             .background {
-                RoundedRectangle(cornerRadius: 9, style: .continuous)
-                    .fill(background)
+                if isSelected {
+                    RoundedRectangle(cornerRadius: 9, style: .continuous)
+                        .fill(Theme.surface)
+                        .shadow(color: .black.opacity(0.06), radius: 5, y: 2)
+                        .matchedGeometryEffect(id: "selection", in: namespace)
+                } else if isHovering {
+                    RoundedRectangle(cornerRadius: 9, style: .continuous)
+                        .fill(Theme.surfaceHover)
+                }
             }
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .pointerStyle(.link)
         .onHover { isHovering = $0 }
+        .animation(.easeOut(duration: 0.14), value: isHovering)
         .help(isCollapsed ? section.rawValue : "")
-    }
-
-    private var background: Color {
-        if isSelected { return Theme.surface }
-        return isHovering ? Theme.surfaceHover : .clear
     }
 }
 
@@ -162,6 +175,7 @@ private struct LinkRow: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .pointerStyle(.link)
         .onHover { isHovering = $0 }
         .help(isCollapsed ? title : "")
     }

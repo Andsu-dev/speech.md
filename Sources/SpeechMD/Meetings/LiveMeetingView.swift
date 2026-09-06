@@ -62,6 +62,7 @@ struct LiveMeetingView: View {
                 .background(.white, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
             }
             .buttonStyle(.plain)
+            .pointerStyle(.link)
         }
         .padding(.horizontal, 22)
         .padding(.vertical, 16)
