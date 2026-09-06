@@ -57,15 +57,11 @@ brew install --cask --no-quarantine speech-md
 notarized by Apple, so Gatekeeper would otherwise ask you to right-click and
 Open on the first launch.
 
-Or build it yourself, see [Build](#build).
-
-## Requirements
-
-- Apple Silicon
-- macOS 26 or later
-- Xcode 26 or later
+Runs on Apple Silicon, macOS 26 or later.
 
 ## Build
+
+Only needed to work on the app, Xcode 26 or later.
 
 ```sh
 ./scripts/bundle.sh
@@ -79,7 +75,8 @@ open dist/speech.md.app
 ```
 
 Builds, zips the bundle, publishes a GitHub Release and prints the `version` and
-`sha256` to paste into `Casks/speech-md.rb` in the tap.
+`sha256` to paste into the cask at
+[Andsu-dev/homebrew-tap](https://github.com/Andsu-dev/homebrew-tap).
 
 ### Signing
 
