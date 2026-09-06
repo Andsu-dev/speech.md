@@ -32,6 +32,7 @@ struct DictationView: View {
                             Spacer()
                             Button("Limpar tudo") { session.clearHistory() }
                                 .controlSize(.small)
+                                .pointerStyle(.link)
                         }
 
                         VStack(spacing: 0) {

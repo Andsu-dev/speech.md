@@ -91,6 +91,7 @@ struct MeetingFeedView: View {
                         Button("Gravar só meu microfone", action: onUseMicrophoneOnly)
                             .font(.system(size: 12))
                             .controlSize(.small)
+                            .pointerStyle(.link)
                     }
                     .padding(.top, 4)
                 }

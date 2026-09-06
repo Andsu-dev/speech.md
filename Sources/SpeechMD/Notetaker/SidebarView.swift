@@ -104,7 +104,6 @@ private struct NavRow: View {
                     .font(.system(size: 14, weight: isSelected ? .semibold : .medium))
                     .frame(width: 19)
                     .scaleEffect(isSelected ? 1.06 : 1)
-                    .symbolEffect(.bounce, options: .speed(1.4), isActive: isSelected)
                 if !isCollapsed {
                     Text(section.rawValue)
                         .font(.system(size: 14, weight: isSelected ? .semibold : .regular))

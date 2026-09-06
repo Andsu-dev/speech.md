@@ -40,6 +40,7 @@ struct FileTranscriptionView: View {
             if !model.isBusy {
                 Button("Escolher arquivo…", action: onChooseFile)
                     .controlSize(.large)
+                    .pointerStyle(.link)
                     .padding(.top, 6)
             }
         }
@@ -78,8 +79,10 @@ struct FileTranscriptionView: View {
                 }
                 Button("Copiar") { model.copyTranscript() }
                     .controlSize(.small)
+                    .pointerStyle(.link)
                 Button("Salvar…") { model.saveTranscript(suggestedName: fileName) }
                     .controlSize(.small)
+                    .pointerStyle(.link)
             }
 
             Text(model.transcript)

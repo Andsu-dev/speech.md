@@ -186,8 +186,10 @@ private struct SnippetEditor: View {
             HStack {
                 Spacer()
                 Button("Cancelar", action: onCancel)
+                    .pointerStyle(.link)
                 Button("Salvar") { onSave(snippet) }
                     .buttonStyle(.borderedProminent)
+                    .pointerStyle(.link)
                     .disabled(!snippet.isValid)
             }
         }
