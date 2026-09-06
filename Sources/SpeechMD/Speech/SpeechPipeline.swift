@@ -195,8 +195,12 @@ actor SpeechPipeline {
         audioEngine?.inputNode.removeTap(onBus: 0)
         audioEngine?.stop()
         audioBridge?.finish()
-        await analyzer?.cancelAndFinishNow()
-        resultTask?.cancel()
+        do {
+            try await analyzer?.finalizeAndFinishThroughEndOfInput()
+        } catch {
+            await analyzer?.cancelAndFinishNow()
+        }
+        await resultTask?.value
         resultTask = nil
         audioBridge = nil
         audioEngine = nil
