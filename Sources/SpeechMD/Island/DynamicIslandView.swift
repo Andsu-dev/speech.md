@@ -10,6 +10,7 @@ struct DynamicIslandView: View {
     /// Segundos até o aviso sumir — a barra drena nesse tempo.
     var countdownDuration: TimeInterval = 3
     var result: String?
+    var isClosing = false
     var onCopy: (() -> Void)?
 
     static let earWidth: CGFloat = 46
@@ -62,11 +63,12 @@ struct DynamicIslandView: View {
                 .frame(width: rightEarWidth, alignment: .trailing)
         }
         .padding(.horizontal, 12)
-        .opacity(isOpen ? 1 : 0)
-        .frame(width: isOpen ? nil : notchWidth, height: isOpen ? Self.height : 0)
+        .opacity(isShown ? 1 : 0)
+        .frame(width: isShown ? nil : notchWidth, height: isShown ? Self.height : 0)
         .background(.black, in: shape)
         .clipShape(shape)
         .shadow(color: .black.opacity(0.35), radius: 16, y: 8)
+        .animation(.spring(response: 0.3, dampingFraction: 0.84), value: isClosing)
         .onAppear {
             withAnimation(.spring(response: 0.42, dampingFraction: 0.72)) {
                 isOpen = true
@@ -138,10 +140,13 @@ struct DynamicIslandView: View {
         .padding(Self.resultInset)
         .frame(width: Self.resultWidth(notchWidth: notchWidth), alignment: .topLeading)
         .background(.black, in: bubbleShape)
-        .opacity(isOpen ? 1 : 0)
-        .scaleEffect(isOpen ? 1 : 0.94, anchor: .top)
-        .blur(radius: isOpen ? 0 : 6)
+        .opacity(isShown ? 1 : 0)
+        .scaleEffect(isShown ? 1 : 0.94, anchor: .top)
+        .blur(radius: isShown ? 0 : 6)
+        .animation(.spring(response: 0.3, dampingFraction: 0.84), value: isClosing)
     }
+
+    private var isShown: Bool { isOpen && !isClosing }
 
     @ViewBuilder
     private var rightEar: some View {
