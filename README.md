@@ -45,6 +45,19 @@ The real-time figure measures file throughput, not the live experience. The
 targets for sustained use — first partial under 300 ms, sustained lag under
 600 ms — have not been measured over a long real session yet.
 
+## Install
+
+```sh
+brew tap Andsu-dev/tap
+brew install --cask --no-quarantine speech-md
+```
+
+`--no-quarantine` matters: the app is signed with a local certificate, not
+notarized by Apple, so Gatekeeper would otherwise ask you to right-click and
+Open on the first launch.
+
+Or build it yourself, see [Build](#build).
+
 ## Requirements
 
 - Apple Silicon
@@ -57,6 +70,15 @@ targets for sustained use — first partial under 300 ms, sustained lag under
 ./scripts/bundle.sh
 open dist/speech.md.app
 ```
+
+### Release
+
+```sh
+./scripts/release.sh
+```
+
+Builds, zips the bundle, publishes a GitHub Release and prints the `version` and
+`sha256` to paste into `Casks/speech-md.rb` in the tap.
 
 ### Signing
 
