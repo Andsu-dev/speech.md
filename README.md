@@ -49,6 +49,7 @@ targets for sustained use — first partial under 300 ms, sustained lag under
 
 ```sh
 brew tap Andsu-dev/tap
+brew trust andsu-dev/tap
 brew install --cask --no-quarantine speech-md
 ```
 

@@ -7,7 +7,7 @@ cask "speech-md" do
   desc "On-device voice transcription for macOS"
   homepage "https://github.com/Andsu-dev/speech.md"
 
-  depends_on macos: ">= :tahoe"
+  depends_on macos: :tahoe
 
   app "speech.md.app"
 
