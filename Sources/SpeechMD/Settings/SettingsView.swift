@@ -165,9 +165,8 @@ private struct PermissionRow: View {
             } else {
                 Button {
                     permission.requestIfPossible()
-                    permission.openSettings()
                 } label: {
-                    Text("Abrir Ajustes")
+                    Text("Permitir")
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(.white)
                         .padding(.horizontal, 14)
@@ -175,6 +174,7 @@ private struct PermissionRow: View {
                         .background(Theme.textPrimary, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
                 }
                 .buttonStyle(.plain)
+                .pointerStyle(.link)
             }
         }
         .padding(.horizontal, 18)

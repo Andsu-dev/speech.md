@@ -57,6 +57,10 @@ enum SystemPermission: String, CaseIterable, Identifiable {
     func requestIfPossible() {
         switch self {
         case .microphone:
+            guard AVCaptureDevice.authorizationStatus(for: .audio) == .notDetermined else {
+                openSettings()
+                return
+            }
             AVCaptureDevice.requestAccess(for: .audio) { _ in }
         case .screenRecording:
             CGRequestScreenCaptureAccess()
