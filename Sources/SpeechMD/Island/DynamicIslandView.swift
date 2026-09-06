@@ -82,12 +82,8 @@ struct DynamicIslandView: View {
     @ViewBuilder
     private var leftEar: some View {
         if isProcessing {
-            ProgressView()
-                .progressViewStyle(.circular)
-                .controlSize(.small)
-                .tint(.white)
-                .scaleEffect(0.62)
-                .frame(width: 15, height: 15)
+            CountdownRing(progress: 0.3, tint: .white, spinning: true)
+                .frame(width: 14, height: 14)
         } else if warning != nil {
             CountdownRing(progress: drain)
                 .frame(width: 15, height: 15)
@@ -214,6 +210,9 @@ private struct CountdownRing: View {
     var progress: CGFloat
     var tint: Color = .yellow
     var track: Color = .white.opacity(0.18)
+    var spinning = false
+
+    @State private var turn = false
 
     var body: some View {
         ZStack {
@@ -223,6 +222,15 @@ private struct CountdownRing: View {
                 .trim(from: 0, to: max(0, min(1, progress)))
                 .stroke(tint, style: StrokeStyle(lineWidth: 2, lineCap: .round))
                 .rotationEffect(.degrees(-90)) // começa no topo
+                .rotationEffect(.degrees(turn ? 360 : 0))
+                .animation(
+                    spinning ? .linear(duration: 0.75).repeatForever(autoreverses: false) : nil,
+                    value: turn
+                )
+        }
+        .onAppear {
+            guard spinning else { return }
+            turn = true
         }
     }
 }
