@@ -50,7 +50,9 @@ final class SnippetStore {
     func expand(_ text: String) -> String {
         var result = text
         for snippet in snippets.sorted(by: { $0.trigger.count > $1.trigger.count }) {
-            let trigger = snippet.trigger.trimmingCharacters(in: .whitespaces)
+            let trigger = snippet.trigger.trimmingCharacters(
+                in: .whitespacesAndNewlines.union(.punctuationCharacters).union(.symbols)
+            )
             guard !trigger.isEmpty else { continue }
 
             // Busca a partir de um índice que avança: reescanear do início
