@@ -51,6 +51,11 @@ struct NotetakerShell: View {
             island.flashWarning(String(message.prefix(28)))
             playFeedback(.warning)
         }
+        .onChange(of: dictation.undelivered) { _, dictated in
+            guard let dictated else { return }
+            island.showResult(dictated.text)
+            playFeedback(.warning)
+        }
         .onChange(of: model.phase) { _, phase in
             guard case .failed = phase else { return }
             island.isSessionActive = false
@@ -148,12 +153,6 @@ struct NotetakerShell: View {
     }
 
     private func startDictation() {
-        if let issue = DictationSession.TargetIssue.current() {
-            island.flashWarning(issue.islandWarning)
-            playFeedback(.warning)
-            return
-        }
-
         dictation.start(
             localeIdentifier: settings.localeIdentifier,
             mode: settings.recognitionMode,
@@ -172,8 +171,8 @@ struct NotetakerShell: View {
         island.isSessionActive = false
         island.warning = nil
         island.isVisible = false
-        if spoke {
-            playFeedback(hadTarget ? .finish : .warning)
+        if spoke, hadTarget {
+            playFeedback(.finish)
         }
     }
 

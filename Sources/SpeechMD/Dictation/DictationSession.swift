@@ -2,7 +2,7 @@ import AppKit
 import Foundation
 import Observation
 
-struct Dictation: Identifiable {
+struct Dictation: Identifiable, Equatable {
     let id = UUID()
     let text: String
     let createdAt: Date
@@ -42,15 +42,6 @@ final class DictationSession {
         case missingPermission
         case noTextField
 
-        var islandWarning: String {
-            switch self {
-            case .missingPermission: "Sem permissão"
-            case .noTextField: "Sem campo de texto"
-            }
-        }
-
-        /// Checado ANTES de ligar o microfone: sem destino não faz sentido
-        /// gravar, o texto não teria onde cair.
         static func current() -> TargetIssue? {
             if !TextInserter.isTrusted { return .missingPermission }
             if !TextInserter.focusedElementAcceptsText() { return .noTextField }
@@ -62,6 +53,8 @@ final class DictationSession {
     private(set) var targetIssue: TargetIssue?
 
     var hasEditableTarget: Bool { targetIssue == nil }
+
+    private(set) var undelivered: Dictation?
 
     private var pipeline: SpeechPipeline?
     private var startTask: Task<Void, Never>?
@@ -126,8 +119,12 @@ final class DictationSession {
             if formatAsMarkdown {
                 text = await TranscriptFormatter.format(text)
             }
-            history.insert(Dictation(text: text, createdAt: Date()), at: 0)
-            guard hasEditableTarget else { return }
+            let dictation = Dictation(text: text, createdAt: Date())
+            history.insert(dictation, at: 0)
+            guard hasEditableTarget else {
+                undelivered = dictation
+                return
+            }
             await TextInserter.insert(text, into: target)
         }
     }
