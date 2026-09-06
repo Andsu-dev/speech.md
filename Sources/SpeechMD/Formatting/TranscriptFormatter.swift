@@ -12,9 +12,9 @@ enum TranscriptFormatter {
     - Corrija apenas pontuação, capitalização e quebras de linha.
 
     FORMATAÇÃO:
-    - Se o texto enumerar itens, transforme-os em lista com "- ".
-    - Mantenha como parágrafo comum o texto que não é enumeração.
-    - Use **negrito** apenas onde o autor pedir ênfase explicitamente.
+    - Uma frase solta é um parágrafo. Nunca vire lista.
+    - Só use lista, com "- ", quando houver dois ou mais itens enumerados.
+    - Nunca use negrito, itálico, título ou numeração.
 
     Responda apenas com o texto formatado, sem comentários.
     """
@@ -30,11 +30,23 @@ enum TranscriptFormatter {
         do {
             let session = LanguageModelSession(instructions: instructions)
             let response = try await session.respond(to: raw)
-            let formatted = response.content.trimmingCharacters(in: .whitespacesAndNewlines)
+            let formatted = sanitize(response.content.trimmingCharacters(in: .whitespacesAndNewlines))
             return preservesContent(raw: raw, formatted: formatted) ? formatted : raw
         } catch {
             return raw
         }
+    }
+
+    private static func sanitize(_ formatted: String) -> String {
+        let marker = /^[ \t]*(?:[-*+]|\d+[.)])[ \t]+/
+        var lines = formatted.components(separatedBy: .newlines)
+        if lines.count(where: { $0.contains(marker) }) < 2 {
+            lines = lines.map { $0.replacing(marker, with: "") }
+        }
+        return lines
+            .joined(separator: "\n")
+            .replacingOccurrences(of: "**", with: "")
+            .replacingOccurrences(of: "__", with: "")
     }
 
     /// O modelo às vezes engole frases inteiras ao reformatar. Se muita palavra
