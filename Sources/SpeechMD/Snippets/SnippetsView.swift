@@ -66,7 +66,7 @@ struct SnippetsView: View {
                     Text(t("Novo atalho", "New shortcut"))
                         .font(.system(size: 13, weight: .semibold))
                 }
-                .foregroundStyle(Theme.textPrimary)
+                .foregroundStyle(Theme.contrastSurface)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 9)
                 .background(.white, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
