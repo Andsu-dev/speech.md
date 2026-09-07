@@ -4,6 +4,7 @@ struct SettingsView: View {
     @Bindable var settings: AppSettings
 
     @State private var permissionsRefreshedAt = Date()
+    @State private var inputDevices = AudioInputDevice.available
 
 
     var body: some View {
@@ -35,7 +36,7 @@ struct SettingsView: View {
 
                     SettingsRow(
                         title: t("Iniciar e parar gravação", "Start and stop recording"),
-                        subtitle: t("Um toque começa, o toque seguinte encerra e cola o texto.", "One tap starts, the next stops and pastes the text.")
+                        subtitle: t("Um toque começa, o toque seguinte encerra e cola o texto. Para gravar \"fn fn\", toque fn duas vezes seguidas.", "One tap starts, the next stops and pastes the text. To record \"fn fn\", tap fn twice in a row.")
                     ) {
                         ShortcutRecorderView(binding: $settings.hotkey)
                     }
@@ -73,6 +74,22 @@ struct SettingsView: View {
                     Divider().overlay(Theme.border)
 
                     SettingsRow(
+                        title: t("Microfone", "Microphone"),
+                        subtitle: t("Vale para o ditado e para a sua trilha nas reuniões. Se o aparelho escolhido estiver desconectado, o padrão do sistema assume.", "Applies to dictation and to your track in meetings. If the chosen device is disconnected, the system default takes over.")
+                    ) {
+                        Picker("", selection: $settings.inputDeviceUID) {
+                            Text(t("Padrão do sistema", "System default")).tag("")
+                            ForEach(inputDevices) { device in
+                                Text(device.name).tag(device.id)
+                            }
+                        }
+                        .labelsHidden()
+                        .frame(maxWidth: .infinity)
+                    }
+
+                    Divider().overlay(Theme.border)
+
+                    SettingsRow(
                         title: t("Modo", "Mode"),
                         subtitle: t("Latência menor ou transcrição mais precisa.", "Lower latency or more accurate transcription.")
                     ) {
@@ -97,6 +114,20 @@ struct SettingsView: View {
                             .labelsHidden()
                             .toggleStyle(.switch)
                             .disabled(!TranscriptFormatter.isAvailable)
+                    }
+
+                    Divider().overlay(Theme.border)
+
+                    SettingsRow(
+                        title: t("Corrigir termos estrangeiros", "Fix foreign terms"),
+                        subtitle: TermPolisher.isAvailable
+                            ? t("Segunda passada pelo modelo para palavras que o dicionário não reconhece. O vocabulário técnico já vai como pista para o reconhecedor de graça, então ligue isto só se ainda escapar termo errado: custa cerca de 1s antes de colar.", "A second pass through the model for words the dictionary doesn't know. The technical vocabulary already goes to the recognizer as a hint for free, so turn this on only if terms still come out wrong: it costs about 1s before pasting.")
+                            : t("Indisponível: requer Apple Intelligence ativa neste Mac.", "Unavailable: requires Apple Intelligence enabled on this Mac.")
+                    ) {
+                        Toggle("", isOn: $settings.polishTerms)
+                            .labelsHidden()
+                            .toggleStyle(.switch)
+                            .disabled(!TermPolisher.isAvailable)
                     }
                 }
 
@@ -158,6 +189,7 @@ struct SettingsView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             permissionsRefreshedAt = Date()
+            inputDevices = AudioInputDevice.available
         }
     }
 }

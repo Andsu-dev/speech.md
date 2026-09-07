@@ -26,9 +26,14 @@ enum Feedback {
         }
     }
 
+    /// Os sons do sistema tocam em volume cheio, e o do ditado dispara com a
+    /// janela escondida, colado no ouvido de quem está de headset.
+    private static let volume: Float = 0.25
+
     static func play(_ kind: Kind, sound: Bool, haptic: Bool) {
-        if sound {
-            NSSound(named: kind.soundName)?.play()
+        if sound, let effect = NSSound(named: kind.soundName) {
+            effect.volume = volume
+            effect.play()
         }
         if haptic {
             NSHapticFeedbackManager.defaultPerformer.perform(
