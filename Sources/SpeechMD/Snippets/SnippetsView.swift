@@ -48,10 +48,10 @@ struct SnippetsView: View {
     private var header: some View {
         HStack(spacing: 14) {
             VStack(alignment: .leading, spacing: 3) {
-                Text("Dicionário")
+                Text(t("Dicionário", "Dictionary"))
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(.white)
-                Text("Fale o atalho e ele vira o texto completo: email, link, prompt que você repete sempre.")
+                Text(t("Fale o atalho e ele vira o texto completo: email, link, prompt que você repete sempre.", "Speak the shortcut and it becomes the full text: email, link, a prompt you repeat all the time."))
                     .font(.system(size: 12))
                     .foregroundStyle(.white.opacity(0.7))
                     .fixedSize(horizontal: false, vertical: true)
@@ -63,7 +63,7 @@ struct SnippetsView: View {
                 HStack(spacing: 7) {
                     Image(systemName: "plus")
                         .font(.system(size: 11, weight: .semibold))
-                    Text("Novo atalho")
+                    Text(t("Novo atalho", "New shortcut"))
                         .font(.system(size: 13, weight: .semibold))
                 }
                 .foregroundStyle(Theme.textPrimary)
@@ -84,10 +84,10 @@ struct SnippetsView: View {
             Image(systemName: "text.book.closed")
                 .font(.system(size: 26, weight: .light))
                 .foregroundStyle(Theme.textTertiary)
-            Text("Nenhum atalho cadastrado")
+            Text(t("Nenhum atalho cadastrado", "No shortcuts yet"))
                 .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(Theme.textPrimary)
-            Text("Ex.: falar “meu email” vira seu endereço completo.")
+            Text(t("Ex.: falar “meu email” vira seu endereço completo.", "Example: saying “my email” becomes your full address."))
                 .font(.system(size: 13))
                 .foregroundStyle(Theme.textSecondary)
         }
@@ -154,20 +154,20 @@ private struct SnippetEditor: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
-            Text(snippet.trigger.isEmpty ? "Novo atalho" : "Editar atalho")
+            Text(snippet.trigger.isEmpty ? t("Novo atalho", "New shortcut") : t("Editar atalho", "Edit shortcut"))
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundStyle(Theme.textPrimary)
 
             VStack(alignment: .leading, spacing: 6) {
-                Text("Quando eu falar")
+                Text(t("Quando eu falar", "When I say"))
                     .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(Theme.textSecondary)
-                TextField("meu email", text: $snippet.trigger)
+                TextField(t("meu email", "my email"), text: $snippet.trigger)
                     .textFieldStyle(.roundedBorder)
             }
 
             VStack(alignment: .leading, spacing: 6) {
-                Text("Escreva isto")
+                Text(t("Escreva isto", "Write this"))
                     .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(Theme.textSecondary)
                 TextEditor(text: $snippet.expansion)
@@ -185,9 +185,9 @@ private struct SnippetEditor: View {
 
             HStack {
                 Spacer()
-                Button("Cancelar", action: onCancel)
+                Button(t("Cancelar", "Cancel"), action: onCancel)
                     .pointerStyle(.link)
-                Button("Salvar") { onSave(snippet) }
+                Button(t("Salvar", "Save")) { onSave(snippet) }
                     .buttonStyle(.borderedProminent)
                     .pointerStyle(.link)
                     .disabled(!snippet.isValid)

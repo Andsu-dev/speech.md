@@ -128,7 +128,7 @@ struct DynamicIslandView: View {
                                 withAnimation(.linear(duration: countdownDuration)) { drain = 0 }
                             }
                     }
-                    Text(didCopy ? "Copiado" : "Copiar")
+                    Text(didCopy ? t("Copiado", "Copied") : t("Copiar", "Copy"))
                         .font(.system(size: 11, weight: .semibold, design: .rounded))
                 }
                 .foregroundStyle(.black)

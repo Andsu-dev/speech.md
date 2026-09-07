@@ -8,11 +8,11 @@ struct SettingsView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 22) {
-                Text("Configurações")
+                Text(t("Configurações", "Settings"))
                     .font(.system(size: 25, weight: .semibold))
                     .foregroundStyle(Theme.textPrimary)
 
-                SettingsGroup("Permissões") {
+                SettingsGroup(t("Permissões", "Permissions")) {
                     ForEach(Array(SystemPermission.allCases.enumerated()), id: \.element.id) { index, permission in
                         if index > 0 {
                             Divider().overlay(Theme.border)
@@ -22,19 +22,19 @@ struct SettingsView: View {
                 }
                 .id(permissionsRefreshedAt)
 
-                SettingsGroup("Atalho") {
+                SettingsGroup(t("Atalho", "Shortcut")) {
                     SettingsRow(
-                        title: "Iniciar e parar gravação",
-                        subtitle: "Funciona com qualquer app em foco."
+                        title: t("Iniciar e parar gravação", "Start and stop recording"),
+                        subtitle: t("Funciona com qualquer app em foco.", "Works with any focused app.")
                     ) {
                         ShortcutRecorderView(binding: $settings.hotkey)
                     }
                 }
 
-                SettingsGroup("Transcrição") {
+                SettingsGroup(t("Transcrição", "Transcription")) {
                     SettingsRow(
-                        title: "Idioma",
-                        subtitle: "Modelo baixado sob demanda, roda no dispositivo."
+                        title: t("Idioma da fala", "Spoken language"),
+                        subtitle: t("O idioma que você fala. Não traduz: falar português com inglês selecionado sai embaralhado. O modelo é baixado sob demanda e roda no dispositivo.", "The language you speak. It does not translate: speaking Portuguese with English selected comes out scrambled. The model downloads on demand and runs on device.")
                     ) {
                         Picker("", selection: $settings.localeIdentifier) {
                             Text("Português (BR)").tag("pt-BR")
@@ -48,8 +48,8 @@ struct SettingsView: View {
                     Divider().overlay(Theme.border)
 
                     SettingsRow(
-                        title: "Modo",
-                        subtitle: "Latência menor ou transcrição mais precisa."
+                        title: t("Modo", "Mode"),
+                        subtitle: t("Latência menor ou transcrição mais precisa.", "Lower latency or more accurate transcription.")
                     ) {
                         Picker("", selection: $settings.recognitionMode) {
                             ForEach(RecognitionMode.allCases) { mode in
@@ -61,12 +61,12 @@ struct SettingsView: View {
                     }
                 }
 
-                SettingsGroup("Formatação") {
+                SettingsGroup(t("Formatação", "Formatting")) {
                     SettingsRow(
-                        title: "Escrever em Markdown",
+                        title: t("Escrever em Markdown", "Write in Markdown"),
                         subtitle: TranscriptFormatter.isAvailable
-                            ? "Enumerações viram lista e a pontuação é corrigida por um modelo no dispositivo. Adiciona cerca de 1s antes de colar."
-                            : "Indisponível: requer Apple Intelligence ativa neste Mac."
+                            ? t("Enumerações viram lista e a pontuação é corrigida por um modelo no dispositivo. Adiciona cerca de 1s antes de colar.", "Enumerations become a list and punctuation is fixed by an on-device model. Adds about 1s before pasting.")
+                            : t("Indisponível: requer Apple Intelligence ativa neste Mac.", "Unavailable: requires Apple Intelligence enabled on this Mac.")
                     ) {
                         Toggle("", isOn: $settings.formatAsMarkdown)
                             .labelsHidden()
@@ -75,10 +75,10 @@ struct SettingsView: View {
                     }
                 }
 
-                SettingsGroup("Retorno") {
+                SettingsGroup(t("Retorno", "Feedback")) {
                     SettingsRow(
-                        title: "Som",
-                        subtitle: "Um toque ao começar a ouvir e outro ao escrever."
+                        title: t("Som", "Sound"),
+                        subtitle: t("Um toque ao começar a ouvir e outro ao escrever.", "A tick when it starts listening and another when it writes.")
                     ) {
                         Toggle("", isOn: $settings.soundFeedback)
                             .labelsHidden()
@@ -92,8 +92,8 @@ struct SettingsView: View {
                     Divider().overlay(Theme.border)
 
                     SettingsRow(
-                        title: "Retorno tátil",
-                        subtitle: "Vibração no trackpad. Sem efeito em trackpad sem Force Touch."
+                        title: t("Retorno tátil", "Haptics"),
+                        subtitle: t("Vibração no trackpad. Sem efeito em trackpad sem Force Touch.", "Trackpad vibration. No effect on trackpads without Force Touch.")
                     ) {
                         Toggle("", isOn: $settings.hapticFeedback)
                             .labelsHidden()
@@ -105,10 +105,10 @@ struct SettingsView: View {
                     }
                 }
 
-                SettingsGroup("Captura") {
+                SettingsGroup(t("Captura", "Capture")) {
                     SettingsRow(
-                        title: "Áudio dos outros participantes",
-                        subtitle: "Grava o áudio do sistema num canal separado do seu microfone."
+                        title: t("Áudio dos outros participantes", "Audio from the other participants"),
+                        subtitle: t("Grava o áudio do sistema num canal separado do seu microfone.", "Records system audio on a channel separate from your microphone.")
                     ) {
                         Toggle("", isOn: $settings.captureSystemAudio)
                             .labelsHidden()
@@ -118,8 +118,8 @@ struct SettingsView: View {
                     Divider().overlay(Theme.border)
 
                     SettingsRow(
-                        title: "Mostrar ilha no topo da tela",
-                        subtitle: "Indicador junto ao notch enquanto a reunião grava."
+                        title: t("Mostrar ilha no topo da tela", "Show the island at the top of the screen"),
+                        subtitle: t("Indicador junto ao notch enquanto a reunião grava.", "Indicator next to the notch while recording.")
                     ) {
                         Toggle("", isOn: $settings.showIsland)
                             .labelsHidden()
@@ -159,14 +159,14 @@ private struct PermissionRow: View {
             Spacer(minLength: 12)
 
             if permission.isGranted {
-                Text("Concedida")
+                Text(t("Concedida", "Granted"))
                     .font(.system(size: 12))
                     .foregroundStyle(Theme.textTertiary)
             } else {
                 Button {
                     permission.requestIfPossible()
                 } label: {
-                    Text("Permitir")
+                    Text(t("Permitir", "Allow"))
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(.white)
                         .padding(.horizontal, 14)

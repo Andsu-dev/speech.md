@@ -10,7 +10,10 @@ final class AppSettings {
     }
 
     var localeIdentifier: String {
-        didSet { defaults.set(localeIdentifier, forKey: Keys.locale) }
+        didSet {
+            defaults.set(localeIdentifier, forKey: Keys.locale)
+            Language.isEnglish = Language.matches(localeIdentifier: localeIdentifier)
+        }
     }
 
     var recognitionMode: RecognitionMode {
@@ -49,6 +52,7 @@ final class AppSettings {
         formatAsMarkdown = defaults.object(forKey: Keys.formatAsMarkdown) as? Bool ?? false
         soundFeedback = defaults.object(forKey: Keys.soundFeedback) as? Bool ?? true
         hapticFeedback = defaults.object(forKey: Keys.hapticFeedback) as? Bool ?? true
+        Language.isEnglish = Language.matches(localeIdentifier: localeIdentifier)
     }
 
     private func save<T: Encodable>(_ value: T, forKey key: String) {

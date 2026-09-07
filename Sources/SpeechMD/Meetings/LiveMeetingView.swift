@@ -15,14 +15,14 @@ struct LiveMeetingView: View {
             } else {
                 HStack(alignment: .top, spacing: 14) {
                     channel(
-                        title: "Você",
+                        title: t("Você", "You"),
                         systemImage: "person.fill",
                         accent: Theme.accent,
                         text: model.youTranscript,
                         metrics: model.youMetrics
                     )
                     channel(
-                        title: "Outros",
+                        title: t("Outros", "Others"),
                         systemImage: "person.2.fill",
                         accent: Theme.live,
                         text: model.othersTranscript,
@@ -37,7 +37,7 @@ struct LiveMeetingView: View {
         HStack(spacing: 12) {
             HStack(spacing: 7) {
                 Circle().fill(Theme.live).frame(width: 7, height: 7)
-                Text(model.phase == .preparing ? "Preparando modelo…" : "Gravando")
+                Text(model.phase == .preparing ? t("Preparando modelo…", "Preparing model…") : t("Gravando", "Recording"))
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(.white)
             }
@@ -53,7 +53,7 @@ struct LiveMeetingView: View {
                 HStack(spacing: 7) {
                     Image(systemName: "stop.fill")
                         .font(.system(size: 11, weight: .semibold))
-                    Text("Encerrar")
+                    Text(t("Encerrar", "Finish"))
                         .font(.system(size: 13, weight: .semibold))
                 }
                 .foregroundStyle(Theme.textPrimary)
@@ -95,7 +95,7 @@ struct LiveMeetingView: View {
             }
 
             ScrollView {
-                Text(text.isEmpty ? "Aguardando áudio…" : text)
+                Text(text.isEmpty ? t("Aguardando áudio…", "Waiting for audio…") : text)
                     .font(.system(size: 13))
                     .foregroundStyle(text.isEmpty ? Theme.textTertiary : Theme.textPrimary)
                     .textSelection(.enabled)

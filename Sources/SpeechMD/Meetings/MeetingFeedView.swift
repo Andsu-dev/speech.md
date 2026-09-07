@@ -65,7 +65,7 @@ struct MeetingFeedView: View {
             Image(systemName: "exclamationmark.triangle.fill")
                 .foregroundStyle(Theme.live)
             VStack(alignment: .leading, spacing: 6) {
-                Text("A gravação não começou")
+                Text(t("A gravação não começou", "Recording did not start"))
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(Theme.textPrimary)
                 Text(message)
@@ -78,7 +78,7 @@ struct MeetingFeedView: View {
                         Button {
                             SystemPermission.screenRecording.requestIfPossible()
                         } label: {
-                            Text("Permitir")
+                            Text(t("Permitir", "Allow"))
                                 .font(.system(size: 12, weight: .semibold))
                                 .foregroundStyle(.white)
                                 .padding(.horizontal, 12)
@@ -88,7 +88,7 @@ struct MeetingFeedView: View {
                         .buttonStyle(.plain)
                         .pointerStyle(.link)
 
-                        Button("Gravar só meu microfone", action: onUseMicrophoneOnly)
+                        Button(t("Gravar só meu microfone", "Record my microphone only"), action: onUseMicrophoneOnly)
                             .font(.system(size: 12))
                             .controlSize(.small)
                             .pointerStyle(.link)
@@ -111,10 +111,10 @@ struct MeetingFeedView: View {
             Image(systemName: "waveform")
                 .font(.system(size: 26, weight: .light))
                 .foregroundStyle(Theme.textTertiary)
-            Text("Nenhuma reunião gravada")
+            Text(t("Nenhuma reunião gravada", "No meetings recorded"))
                 .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(Theme.textPrimary)
-            Text("Clique em Começar para gravar sua primeira reunião.")
+            Text(t("Clique em Começar para gravar sua primeira reunião.", "Click Start to record your first meeting."))
                 .font(.system(size: 13))
                 .foregroundStyle(Theme.textSecondary)
         }
@@ -125,10 +125,10 @@ struct MeetingFeedView: View {
     private var startBar: some View {
         HStack(spacing: 14) {
             VStack(alignment: .leading, spacing: 3) {
-                Text(isRecording ? "Gravando reunião" : "Gravar reunião")
+                Text(isRecording ? t("Gravando reunião", "Recording meeting") : t("Gravar reunião", "Record meeting"))
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(.white)
-                Text("Sua voz e a dos outros participantes, separadas e no seu Mac.")
+                Text(t("Sua voz e a dos outros participantes, separadas e no seu Mac.", "Your voice and the other participants, on separate channels, on your Mac."))
                     .font(.system(size: 12))
                     .foregroundStyle(.white.opacity(0.7))
             }
@@ -138,7 +138,7 @@ struct MeetingFeedView: View {
                 HStack(spacing: 7) {
                     Image(systemName: isRecording ? "stop.fill" : "record.circle")
                         .font(.system(size: 12, weight: .semibold))
-                    Text(isRecording ? "Parar" : "Começar")
+                    Text(isRecording ? t("Parar", "Stop") : t("Começar", "Start"))
                         .font(.system(size: 13, weight: .semibold))
                 }
                 .foregroundStyle(Theme.textPrimary)
@@ -215,7 +215,7 @@ private struct LiveBadge: View {
             Circle()
                 .fill(Theme.live)
                 .frame(width: 5, height: 5)
-            Text("AO VIVO")
+            Text(t("AO VIVO", "LIVE"))
                 .font(.system(size: 9, weight: .bold))
                 .tracking(0.4)
         }

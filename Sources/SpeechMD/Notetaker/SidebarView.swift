@@ -84,7 +84,7 @@ struct SidebarView: View {
         }
         .buttonStyle(.plain)
         .pointerStyle(.link)
-        .help(isCollapsed ? "Expandir barra lateral" : "Recolher barra lateral")
+        .help(isCollapsed ? t("Expandir barra lateral", "Expand sidebar") : t("Recolher barra lateral", "Collapse sidebar"))
     }
 }
 
@@ -105,7 +105,7 @@ private struct NavRow: View {
                     .frame(width: 19)
                     .scaleEffect(isSelected ? 1.06 : 1)
                 if !isCollapsed {
-                    Text(section.rawValue)
+                    Text(section.title)
                         .font(.system(size: 14, weight: isSelected ? .semibold : .regular))
                         .fixedSize()
                     Spacer(minLength: 0)
@@ -132,7 +132,7 @@ private struct NavRow: View {
         .pointerStyle(.link)
         .onHover { isHovering = $0 }
         .animation(.easeOut(duration: 0.14), value: isHovering)
-        .help(isCollapsed ? section.rawValue : "")
+        .help(isCollapsed ? section.title : "")
     }
 }
 

@@ -20,7 +20,7 @@ struct ShortcutRecorderView: View {
             }
             .overlay {
                 HStack(spacing: 7) {
-                    Text(isRecording ? "Pressione as teclas" : binding.displayString)
+                    Text(isRecording ? t("Pressione as teclas", "Press the keys") : binding.displayString)
                         .font(.system(size: 13, weight: .medium, design: isRecording ? .default : .rounded))
                         .foregroundStyle(isRecording ? Theme.accent : Theme.textPrimary)
                     if !isRecording {
