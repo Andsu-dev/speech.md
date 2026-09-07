@@ -2,11 +2,14 @@ import AppKit
 import Carbon.HIToolbox
 
 /// Atalho global via Carbon. É a única rota que dispensa a permissão de
-/// Acessibilidade — `NSEvent.addGlobalMonitorForEvents` exigiria.
+/// Acessibilidade — `NSEvent.addGlobalMonitorForEvents` exigiria, e é por isso
+/// que a tecla fn, que o Carbon não registra, depende dela.
 @MainActor
 final class GlobalHotkey {
     private var hotKeyRef: EventHotKeyRef?
     private var eventHandler: EventHandlerRef?
+    private var flagsMonitors: [Any] = []
+    private var isFunctionKeyDown = false
     private var onPress: (() -> Void)?
     private var onRelease: (() -> Void)?
 
@@ -21,6 +24,11 @@ final class GlobalHotkey {
         guard binding.isValid else { return }
         self.onPress = onPress
         self.onRelease = onRelease
+
+        guard !binding.isFunctionKey else {
+            observeFunctionKey()
+            return
+        }
 
         installHandlerIfNeeded()
 
@@ -38,6 +46,29 @@ final class GlobalHotkey {
         if let hotKeyRef {
             UnregisterEventHotKey(hotKeyRef)
             self.hotKeyRef = nil
+        }
+        flagsMonitors.forEach(NSEvent.removeMonitor)
+        flagsMonitors = []
+        isFunctionKeyDown = false
+    }
+
+    private func observeFunctionKey() {
+        let handle: (NSEvent) -> Void = { [weak self] event in
+            guard let self, event.keyCode == HotkeyBinding.fnKeyCode else { return }
+            let isDown = event.modifierFlags.contains(.function)
+            guard isDown != isFunctionKeyDown else { return }
+            isFunctionKeyDown = isDown
+            isDown ? onPress?() : onRelease?()
+        }
+
+        if let global = NSEvent.addGlobalMonitorForEvents(matching: .flagsChanged, handler: handle) {
+            flagsMonitors.append(global)
+        }
+        if let local = NSEvent.addLocalMonitorForEvents(matching: .flagsChanged, handler: { event in
+            handle(event)
+            return event
+        }) {
+            flagsMonitors.append(local)
         }
     }
 

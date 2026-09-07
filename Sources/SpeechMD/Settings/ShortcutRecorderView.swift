@@ -68,6 +68,16 @@ final class KeyCaptureNSView: NSView {
         return true
     }
 
+    override func flagsChanged(with event: NSEvent) {
+        guard isRecording, event.keyCode == HotkeyBinding.fnKeyCode else {
+            super.flagsChanged(with: event)
+            return
+        }
+        guard event.modifierFlags.contains(.function) else { return }
+        onCapture?(.fn)
+        isRecording = false
+    }
+
     override func keyDown(with event: NSEvent) {
         guard isRecording else {
             super.keyDown(with: event)
