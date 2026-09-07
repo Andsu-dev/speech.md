@@ -138,7 +138,10 @@ struct NotetakerShell: View {
 
         guard !HotkeyCapture.shared.isCapturing else { return }
 
-        if settings.hotkey != settings.pushToTalkHotkey {
+        // Dois bindings na mesma tecla fn brigam pelo mesmo evento: o toque que
+        // começa o "segura pra falar" seria o mesmo que fecha o duplo toque.
+        let shareFunctionKey = settings.hotkey.isFunctionKey && settings.pushToTalkHotkey.isFunctionKey
+        if settings.hotkey != settings.pushToTalkHotkey, !shareFunctionKey {
             toggleHotkey.register(
                 settings.hotkey,
                 onPress: { toggleDictation() },
@@ -153,12 +156,18 @@ struct NotetakerShell: View {
     }
 
     private func pushToTalkPressed() {
-        guard !model.phase.isRunning, !dictation.isRunning else { return }
+        guard !model.phase.isRunning else { return }
+        // Duplo toque não tem "solta": vira liga/desliga, como o outro atalho.
+        guard !settings.pushToTalkHotkey.isDoubleTap else {
+            toggleDictation()
+            return
+        }
+        guard !dictation.isRunning else { return }
         startDictation()
     }
 
     private func pushToTalkReleased() {
-        guard dictation.isRunning else { return }
+        guard dictation.isRunning, !settings.pushToTalkHotkey.isDoubleTap else { return }
         finishDictation()
     }
 
@@ -171,7 +180,10 @@ struct NotetakerShell: View {
         dictation.start(
             localeIdentifier: settings.localeIdentifier,
             mode: settings.recognitionMode,
+            inputDeviceUID: settings.inputDeviceUID,
+            contextualTerms: SpokenTerms.all(with: snippets.snippets.map(\.expansion)),
             formatAsMarkdown: settings.formatAsMarkdown,
+            polishTerms: settings.polishTerms,
             expand: { snippets.expand($0) }
         )
         island.isSessionActive = true
@@ -200,6 +212,7 @@ struct NotetakerShell: View {
         } else {
             model.localeIdentifier = settings.localeIdentifier
             model.recognitionMode = settings.recognitionMode
+            model.inputDeviceUID = settings.inputDeviceUID
             if settings.captureSystemAudio {
                 model.startCall()
             } else {

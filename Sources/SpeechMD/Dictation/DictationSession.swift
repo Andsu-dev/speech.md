@@ -66,11 +66,16 @@ final class DictationSession {
     private var targetApp: NSRunningApplication?
     private var expand: (String) -> String = { $0 }
     private var formatAsMarkdown = false
+    private var polishTerms = false
+    private var localeIdentifier = "pt-BR"
 
     func start(
         localeIdentifier: String,
         mode: RecognitionMode,
+        inputDeviceUID: String = "",
+        contextualTerms: [String] = SpokenTerms.all(),
         formatAsMarkdown: Bool = false,
+        polishTerms: Bool = false,
         expand: @escaping (String) -> String = { $0 }
     ) {
         guard !isRunning else { return }
@@ -78,14 +83,23 @@ final class DictationSession {
         targetApp = frontmost?.bundleIdentifier == Bundle.main.bundleIdentifier ? nil : frontmost
         self.expand = expand
         self.formatAsMarkdown = formatAsMarkdown
+        self.polishTerms = polishTerms
+        self.localeIdentifier = localeIdentifier
         targetIssue = TargetIssue.current(target: targetApp)
+
+        if polishTerms { TermPolisher.prewarm() }
 
         state = .starting
         liveText = ""
 
         startTask = Task(priority: .userInitiated) {
             do {
-                let pipeline = SpeechPipeline(localeIdentifier: localeIdentifier, mode: mode)
+                let pipeline = SpeechPipeline(
+                    localeIdentifier: localeIdentifier,
+                    mode: mode,
+                    inputDeviceUID: inputDeviceUID.isEmpty ? nil : inputDeviceUID,
+                    contextualTerms: contextualTerms
+                )
                 self.pipeline = pipeline
                 try await pipeline.startMicrophone { [weak self] event in
                     self?.liveText = event.accumulatedText
@@ -124,6 +138,9 @@ final class DictationSession {
             }
 
             var text = expand(raw)
+            if polishTerms {
+                text = await TermPolisher.polish(text, localeIdentifier: localeIdentifier)
+            }
             if formatAsMarkdown {
                 text = await TranscriptFormatter.format(text)
             }

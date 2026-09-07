@@ -28,6 +28,11 @@ final class AppSettings {
         }
     }
 
+    /// UID do microfone escolhido; vazio significa o padrão do sistema.
+    var inputDeviceUID: String {
+        didSet { defaults.set(inputDeviceUID, forKey: Keys.inputDeviceUID) }
+    }
+
     var recognitionMode: RecognitionMode {
         didSet { defaults.set(recognitionMode.rawValue, forKey: Keys.recognitionMode) }
     }
@@ -42,6 +47,10 @@ final class AppSettings {
 
     var formatAsMarkdown: Bool {
         didSet { defaults.set(formatAsMarkdown, forKey: Keys.formatAsMarkdown) }
+    }
+
+    var polishTerms: Bool {
+        didSet { defaults.set(polishTerms, forKey: Keys.polishTerms) }
     }
 
     var soundFeedback: Bool {
@@ -60,11 +69,13 @@ final class AppSettings {
         localeIdentifier = defaults.string(forKey: Keys.locale) ?? "pt-BR"
         appearance = defaults.string(forKey: Keys.appearance)
             .flatMap(AppAppearance.init(rawValue:)) ?? .system
+        inputDeviceUID = defaults.string(forKey: Keys.inputDeviceUID) ?? ""
         recognitionMode = defaults.string(forKey: Keys.recognitionMode)
             .flatMap(RecognitionMode.init(rawValue:)) ?? .lowLatency
         captureSystemAudio = defaults.object(forKey: Keys.captureSystemAudio) as? Bool ?? true
         showIsland = defaults.object(forKey: Keys.showIsland) as? Bool ?? true
         formatAsMarkdown = defaults.object(forKey: Keys.formatAsMarkdown) as? Bool ?? false
+        polishTerms = defaults.object(forKey: Keys.polishTerms) as? Bool ?? false
         soundFeedback = defaults.object(forKey: Keys.soundFeedback) as? Bool ?? true
         hapticFeedback = defaults.object(forKey: Keys.hapticFeedback) as? Bool ?? true
         Language.isEnglish = Language.matches(localeIdentifier: localeIdentifier)
@@ -86,10 +97,12 @@ final class AppSettings {
         static let pushToTalkHotkey = "pushToTalkHotkey"
         static let locale = "localeIdentifier"
         static let appearance = "appearance"
+        static let inputDeviceUID = "inputDeviceUID"
         static let recognitionMode = "recognitionMode"
         static let captureSystemAudio = "captureSystemAudio"
         static let showIsland = "showIsland"
         static let formatAsMarkdown = "formatAsMarkdown"
+        static let polishTerms = "polishTerms"
         static let soundFeedback = "soundFeedback"
         static let hapticFeedback = "hapticFeedback"
     }
