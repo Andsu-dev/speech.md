@@ -6,6 +6,12 @@ import Carbon.HIToolbox
 /// que a tecla fn, que o Carbon não registra, depende dela.
 @MainActor
 final class GlobalHotkey {
+    private let id: UInt32
+
+    init(id: UInt32) {
+        self.id = id
+    }
+
     private var hotKeyRef: EventHotKeyRef?
     private var eventHandler: EventHandlerRef?
     private var flagsMonitors: [Any] = []
@@ -13,7 +19,7 @@ final class GlobalHotkey {
     private var onPress: (() -> Void)?
     private var onRelease: (() -> Void)?
 
-    private static let signature = OSType(0x53504348) // 'SPCH'
+    fileprivate static let signature = OSType(0x53504348) // 'SPCH'
 
     func register(
         _ binding: HotkeyBinding,
@@ -35,7 +41,7 @@ final class GlobalHotkey {
         RegisterEventHotKey(
             binding.keyCode,
             carbonModifiers(from: binding.modifierFlags),
-            EventHotKeyID(signature: Self.signature, id: 1),
+            EventHotKeyID(signature: Self.signature, id: id),
             GetEventDispatcherTarget(),
             0,
             &hotKeyRef
@@ -92,6 +98,21 @@ final class GlobalHotkey {
             { _, event, userData in
                 guard let userData else { return noErr }
                 let hotkey = Unmanaged<GlobalHotkey>.fromOpaque(userData).takeUnretainedValue()
+
+                var fired = EventHotKeyID()
+                GetEventParameter(
+                    event,
+                    EventParamName(kEventParamDirectObject),
+                    EventParamType(typeEventHotKeyID),
+                    nil,
+                    MemoryLayout<EventHotKeyID>.size,
+                    nil,
+                    &fired
+                )
+                guard fired.signature == GlobalHotkey.signature, fired.id == hotkey.id else {
+                    return OSStatus(eventNotHandledErr)
+                }
+
                 let isRelease = GetEventKind(event) == UInt32(kEventHotKeyReleased)
                 DispatchQueue.main.async {
                     MainActor.assumeIsolated {

@@ -4,6 +4,11 @@ struct SettingsView: View {
     @Bindable var settings: AppSettings
 
     @State private var permissionsRefreshedAt = Date()
+    @State private var isGlobeDisabled = GlobeKeyAction.isDisabled
+
+    private var usesFunctionKey: Bool {
+        settings.hotkey.isFunctionKey || settings.pushToTalkHotkey.isFunctionKey
+    }
 
     var body: some View {
         ScrollView {
@@ -24,10 +29,35 @@ struct SettingsView: View {
 
                 SettingsGroup(t("Atalho", "Shortcut")) {
                     SettingsRow(
-                        title: t("Tecla do ditado", "Dictation key"),
-                        subtitle: t("Segure para falar, ou toque duas vezes para gravar até o toque seguinte. Funciona com qualquer app em foco.", "Hold to talk, or double tap to record until the next tap. Works with any focused app.")
+                        title: t("Pressione para falar", "Push to talk"),
+                        subtitle: t("Grava enquanto a tecla estiver pressionada.", "Records while the key is held.")
+                    ) {
+                        ShortcutRecorderView(binding: $settings.pushToTalkHotkey)
+                    }
+
+                    Divider().overlay(Theme.border)
+
+                    SettingsRow(
+                        title: t("Iniciar e parar gravação", "Start and stop recording"),
+                        subtitle: t("Um toque começa, o toque seguinte encerra e cola o texto.", "One tap starts, the next stops and pastes the text.")
                     ) {
                         ShortcutRecorderView(binding: $settings.hotkey)
+                    }
+
+                    if usesFunctionKey, !isGlobeDisabled {
+                        Divider().overlay(Theme.border)
+
+                        SettingsRow(
+                            title: t("Ação da tecla 🌐", "Globe key action"),
+                            subtitle: t("O macOS abre o painel de emoji ao pressionar fn, e isso atropela o atalho. Desligar exige sair e entrar na conta.", "macOS opens the emoji panel when fn is pressed, which fights the shortcut. Turning it off requires logging out and back in.")
+                        ) {
+                            Button(t("Desligar", "Turn off")) {
+                                GlobeKeyAction.disable()
+                                isGlobeDisabled = true
+                            }
+                            .controlSize(.large)
+                            .pointerStyle(.link)
+                        }
                     }
                 }
 
