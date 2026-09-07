@@ -46,11 +46,11 @@ final class DictationSession {
 
     enum TargetIssue: Equatable {
         case missingPermission
-        case noTextField
+        case noTarget
 
-        static func current() -> TargetIssue? {
+        static func current(target: NSRunningApplication?) -> TargetIssue? {
             if !TextInserter.isTrusted { return .missingPermission }
-            if !TextInserter.focusedElementAcceptsText() { return .noTextField }
+            if target == nil { return .noTarget }
             return nil
         }
     }
@@ -79,7 +79,7 @@ final class DictationSession {
         targetApp = frontmost?.bundleIdentifier == Bundle.main.bundleIdentifier ? nil : frontmost
         self.expand = expand
         self.formatAsMarkdown = formatAsMarkdown
-        targetIssue = TargetIssue.current()
+        targetIssue = TargetIssue.current(target: targetApp)
 
         state = .starting
         liveText = ""
