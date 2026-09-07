@@ -2,7 +2,19 @@ import FoundationModels
 import Foundation
 
 /// Passa a transcrição crua pelo modelo on-device para virar Markdown.
+@MainActor
 enum TranscriptFormatter {
+    private static var session: LanguageModelSession?
+
+    /// Abre a sessão quando a gravação começa: a primeira resposta do modelo
+    /// custa o carregamento dele, e a fala é tempo de sobra para pagar isso.
+    static func prewarm() {
+        guard isAvailable else { return }
+        let session = LanguageModelSession(instructions: instructions)
+        session.prewarm()
+        self.session = session
+    }
+
     private static let instructions = """
     Você formata transcrições de ditado em Markdown.
 
@@ -28,8 +40,12 @@ enum TranscriptFormatter {
         guard isAvailable, raw.count > 12 else { return raw }
 
         do {
-            let session = LanguageModelSession(instructions: instructions)
-            let response = try await session.respond(to: raw)
+            let session = self.session ?? LanguageModelSession(instructions: instructions)
+            self.session = nil
+            let response = try await session.respond(
+                to: raw,
+                options: GenerationOptions(sampling: .greedy, maximumResponseTokens: raw.count)
+            )
             let formatted = sanitize(response.content.trimmingCharacters(in: .whitespacesAndNewlines))
             return preservesContent(raw: raw, formatted: formatted) ? formatted : raw
         } catch {
