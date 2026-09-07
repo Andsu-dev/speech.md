@@ -20,8 +20,6 @@ struct NotetakerShell: View {
     /// Abaixo disso o atalho conta como toque, não como "segurar".
     private static let tapThreshold: TimeInterval = 0.4
 
-    private let ticker = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
-
     var body: some View {
         HStack(spacing: 0) {
             SidebarView(selection: $selection, isCollapsed: $isSidebarCollapsed)
@@ -38,6 +36,7 @@ struct NotetakerShell: View {
             }
             .background(Theme.canvas)
         }
+        .id(settings.localeIdentifier)
         .frame(minWidth: 1_060, minHeight: 700)
         .background(Theme.canvas)
         // paleta do Theme é clara e fixa; sem isto sheets, campos e pickers
@@ -70,9 +69,12 @@ struct NotetakerShell: View {
             island.isVisible = false
             meetingStartedAt = nil
         }
-        .onReceive(ticker) { _ in
-            guard let meetingStartedAt else { return }
-            elapsed = Date().timeIntervalSince(meetingStartedAt)
+        .task(id: meetingStartedAt) {
+            guard let startedAt = meetingStartedAt else { return }
+            while !Task.isCancelled {
+                elapsed = Date().timeIntervalSince(startedAt)
+                try? await Task.sleep(for: .seconds(1))
+            }
         }
     }
 
@@ -221,7 +223,10 @@ struct NotetakerShell: View {
         let excerpt = [you, others].first { !$0.isEmpty } ?? ""
         meetings.insert(
             Meeting(
-                title: "Reunião de \(Meeting.titleFormatter.string(from: startedAt))",
+                title: t(
+                    "Reunião de \(Meeting.titleFormatter.string(from: startedAt))",
+                    "Meeting at \(Meeting.titleFormatter.string(from: startedAt))"
+                ),
                 startedAt: startedAt,
                 duration: duration,
                 participants: others.isEmpty ? 1 : 2,
