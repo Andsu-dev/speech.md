@@ -16,6 +16,7 @@ final class GlobalHotkey {
     private var eventHandler: EventHandlerRef?
     private var flagsMonitors: [Any] = []
     private var isFunctionKeyDown = false
+    private var lastFunctionTapAt: Date?
     private var onPress: (() -> Void)?
     private var onRelease: (() -> Void)?
 
@@ -32,7 +33,7 @@ final class GlobalHotkey {
         self.onRelease = onRelease
 
         guard !binding.isFunctionKey else {
-            observeFunctionKey()
+            observeFunctionKey(doubleTap: binding.isDoubleTap)
             return
         }
 
@@ -56,15 +57,32 @@ final class GlobalHotkey {
         flagsMonitors.forEach(NSEvent.removeMonitor)
         flagsMonitors = []
         isFunctionKeyDown = false
+        lastFunctionTapAt = nil
     }
 
-    private func observeFunctionKey() {
+    /// No duplo toque não existe "segurar": o segundo toque dispara e pronto,
+    /// então quem usa esse binding trata como liga/desliga.
+    private func observeFunctionKey(doubleTap: Bool) {
         let handle: (NSEvent) -> Void = { [weak self] event in
             guard let self, event.keyCode == HotkeyBinding.fnKeyCode else { return }
             let isDown = event.modifierFlags.contains(.function)
             guard isDown != isFunctionKeyDown else { return }
             isFunctionKeyDown = isDown
-            isDown ? onPress?() : onRelease?()
+
+            guard doubleTap else {
+                isDown ? onPress?() : onRelease?()
+                return
+            }
+            guard isDown else { return }
+
+            let now = Date()
+            if let last = lastFunctionTapAt,
+               now.timeIntervalSince(last) <= HotkeyBinding.doubleTapWindow {
+                lastFunctionTapAt = nil
+                onPress?()
+            } else {
+                lastFunctionTapAt = now
+            }
         }
 
         if let global = NSEvent.addGlobalMonitorForEvents(matching: .flagsChanged, handler: handle) {
