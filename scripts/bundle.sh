@@ -16,6 +16,7 @@ cp ".build/release/speech-md" "$contents_dir/MacOS/speech-md"
 cp "App/Info.plist" "$contents_dir/Info.plist"
 mkdir -p "$contents_dir/Resources"
 cp "App/AppIcon.icns" "$contents_dir/Resources/AppIcon.icns"
+cp "App/conty-logo.svg" "$contents_dir/Resources/conty-logo.svg"
 # Identidade estável (certificado local auto-assinado, só desta máquina).
 # Ad-hoc (--sign -) gera uma cdhash nova a cada build, e o TCC amarra
 # microfone/tela/acessibilidade a ela — por isso as permissões resetavam

@@ -38,6 +38,7 @@ enum NavSection: String, CaseIterable, Identifiable {
 enum Links {
     static let repository = URL(string: "https://github.com/andersonbrdev/speech-md")!
     static let profile = URL(string: "https://x.com/andersonbrdev")!
+    static let conty = URL(string: "https://appconty.com")!
 }
 
 struct Meeting: Identifiable {
