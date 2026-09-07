@@ -7,8 +7,8 @@ struct NotetakerShell: View {
     @State private var selection: NavSection = .dictation
     @State private var settings = AppSettings()
     @State private var island = IslandController()
-    @State private var toggleHotkey = GlobalHotkey(id: 1)
-    @State private var pushToTalkHotkey = GlobalHotkey(id: 2)
+    @State private var hotkey = GlobalHotkey(id: 1)
+    @State private var gesture = DictationGesture()
     @State private var dictation = DictationSession()
     @State private var files = FileTranscriptionModel()
     @State private var snippets = SnippetStore()
@@ -37,18 +37,14 @@ struct NotetakerShell: View {
         .background(Theme.canvas)
         .onAppear {
             registerHotkeys()
+            gesture.onStart = startDictation
+            gesture.onFinish = finishDictation
             dictation.onFinish = handleDictationOutcome
             dictation.onFailure = handleDictationFailure
         }
         .onChange(of: settings.hotkey) { _, _ in registerHotkeys() }
-        .onChange(of: settings.pushToTalkHotkey) { _, _ in registerHotkeys() }
         .onChange(of: HotkeyCapture.shared.isCapturing) { _, isCapturing in
-            if isCapturing {
-                toggleHotkey.unregister()
-                pushToTalkHotkey.unregister()
-            } else {
-                registerHotkeys()
-            }
+            isCapturing ? hotkey.unregister() : registerHotkeys()
         }
         .onChange(of: model.phase) { _, phase in
             guard case .failed = phase else { return }
@@ -72,7 +68,6 @@ struct NotetakerShell: View {
             DictationView(
                 session: dictation,
                 hotkey: settings.hotkey,
-                pushToTalkHotkey: settings.pushToTalkHotkey,
                 onToggle: toggleDictation
             )
         case .notetaker:
@@ -132,47 +127,22 @@ struct NotetakerShell: View {
     }
 
     private func registerHotkeys() {
-        if settings.hotkey.isFunctionKey || settings.pushToTalkHotkey.isFunctionKey {
-            GlobeKeyAction.disableIfNeeded()
-        }
+        if settings.hotkey.isFunctionKey { GlobeKeyAction.disableIfNeeded() }
 
         guard !HotkeyCapture.shared.isCapturing else { return }
 
-        // Dois bindings na mesma tecla fn brigam pelo mesmo evento: o toque que
-        // começa o "segura pra falar" seria o mesmo que fecha o duplo toque.
-        let shareFunctionKey = settings.hotkey.isFunctionKey && settings.pushToTalkHotkey.isFunctionKey
-        if settings.hotkey != settings.pushToTalkHotkey, !shareFunctionKey {
-            toggleHotkey.register(
-                settings.hotkey,
-                onPress: { toggleDictation() },
-                onRelease: {}
-            )
-        }
-        pushToTalkHotkey.register(
-            settings.pushToTalkHotkey,
-            onPress: { pushToTalkPressed() },
-            onRelease: { pushToTalkReleased() }
+        hotkey.register(
+            settings.hotkey,
+            onPress: { guard !model.phase.isRunning else { return }; gesture.keyDown() },
+            onRelease: { gesture.keyUp() }
         )
     }
 
-    private func pushToTalkPressed() {
-        guard !model.phase.isRunning else { return }
-        // Duplo toque não tem "solta": vira liga/desliga, como o outro atalho.
-        guard !settings.pushToTalkHotkey.isDoubleTap else {
-            toggleDictation()
-            return
-        }
-        guard !dictation.isRunning else { return }
-        startDictation()
-    }
-
-    private func pushToTalkReleased() {
-        guard dictation.isRunning, !settings.pushToTalkHotkey.isDoubleTap else { return }
-        finishDictation()
-    }
-
+    /// O botão Falar e o clique na ilha entram por aqui; o gesto precisa saber
+    /// para não achar que ainda está gravando no próximo toque da tecla.
     private func toggleDictation() {
         guard !model.phase.isRunning else { return }
+        gesture.reset()
         dictation.isRunning ? finishDictation() : startDictation()
     }
 

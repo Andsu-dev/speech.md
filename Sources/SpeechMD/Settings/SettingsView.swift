@@ -26,20 +26,12 @@ struct SettingsView: View {
 
                 SettingsGroup(t("Atalho", "Shortcut")) {
                     SettingsRow(
-                        title: t("Pressione para falar", "Push to talk"),
-                        subtitle: t("Grava enquanto a tecla estiver pressionada.", "Records while the key is held.")
-                    ) {
-                        ShortcutRecorderView(binding: $settings.pushToTalkHotkey)
-                    }
-
-                    Divider().overlay(Theme.border)
-
-                    SettingsRow(
-                        title: t("Iniciar e parar gravação", "Start and stop recording"),
-                        subtitle: t("Um toque começa, o toque seguinte encerra e cola o texto. Para gravar \"fn fn\", toque fn duas vezes seguidas.", "One tap starts, the next stops and pastes the text. To record \"fn fn\", tap fn twice in a row.")
+                        title: t("Tecla do ditado", "Dictation key"),
+                        subtitle: t("Segure para falar: ao soltar, o texto é colado. Dois toques rápidos travam a gravação, e o toque seguinte encerra.", "Hold to speak: on release the text is pasted. Two quick taps keep it recording, and the next tap ends it.")
                     ) {
                         ShortcutRecorderView(binding: $settings.hotkey)
                     }
+
                 }
 
                 SettingsGroup(t("Aparência", "Appearance")) {
@@ -121,7 +113,7 @@ struct SettingsView: View {
                     SettingsRow(
                         title: t("Corrigir termos estrangeiros", "Fix foreign terms"),
                         subtitle: TermPolisher.isAvailable
-                            ? t("Segunda passada pelo modelo para palavras que o dicionário não reconhece. O vocabulário técnico já vai como pista para o reconhecedor de graça, então ligue isto só se ainda escapar termo errado: custa cerca de 1s antes de colar.", "A second pass through the model for words the dictionary doesn't know. The technical vocabulary already goes to the recognizer as a hint for free, so turn this on only if terms still come out wrong: it costs about 1s before pasting.")
+                            ? t("Corrige palavras que o dicionário não reconhece. Custa cerca de 1s antes de colar.", "Fixes words the dictionary doesn't know. Costs about 1s before pasting.")
                             : t("Indisponível: requer Apple Intelligence ativa neste Mac.", "Unavailable: requires Apple Intelligence enabled on this Mac.")
                     ) {
                         Toggle("", isOn: $settings.polishTerms)

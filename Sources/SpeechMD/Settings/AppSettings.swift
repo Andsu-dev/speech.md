@@ -10,10 +10,6 @@ final class AppSettings {
         didSet { save(hotkey, forKey: Keys.hotkey) }
     }
 
-    var pushToTalkHotkey: HotkeyBinding {
-        didSet { save(pushToTalkHotkey, forKey: Keys.pushToTalkHotkey) }
-    }
-
     var localeIdentifier: String {
         didSet {
             defaults.set(localeIdentifier, forKey: Keys.locale)
@@ -64,8 +60,7 @@ final class AppSettings {
     private let defaults = UserDefaults.standard
 
     init() {
-        hotkey = Self.load(HotkeyBinding.self, forKey: Keys.hotkey) ?? .default
-        pushToTalkHotkey = Self.load(HotkeyBinding.self, forKey: Keys.pushToTalkHotkey) ?? .fn
+        hotkey = Self.load(HotkeyBinding.self, forKey: Keys.hotkey) ?? .fn
         localeIdentifier = defaults.string(forKey: Keys.locale) ?? "pt-BR"
         appearance = defaults.string(forKey: Keys.appearance)
             .flatMap(AppAppearance.init(rawValue:)) ?? .system
@@ -94,7 +89,6 @@ final class AppSettings {
 
     private enum Keys {
         static let hotkey = "hotkey"
-        static let pushToTalkHotkey = "pushToTalkHotkey"
         static let locale = "localeIdentifier"
         static let appearance = "appearance"
         static let inputDeviceUID = "inputDeviceUID"
