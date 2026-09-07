@@ -1,5 +1,16 @@
 import AppKit
+import Observation
 import SwiftUI
+
+/// Enquanto um campo grava, os atalhos globais saem do ar: um hotkey do Carbon
+/// consome a combinação antes de qualquer view, e a tecla nunca chegaria aqui.
+@MainActor
+@Observable
+final class HotkeyCapture {
+    static let shared = HotkeyCapture()
+
+    var isCapturing = false
+}
 
 /// Campo que captura a próxima combinação de teclas pressionada.
 ///
@@ -34,7 +45,10 @@ private struct KeyCaptureView: NSViewRepresentable {
 
     func makeNSView(context: Context) -> KeyCaptureNSView {
         let view = KeyCaptureNSView()
-        view.onRecordingChange = { isRecording = $0 }
+        view.onRecordingChange = {
+            isRecording = $0
+            HotkeyCapture.shared.isCapturing = $0
+        }
         view.onCapture = { binding = $0 }
         return view
     }

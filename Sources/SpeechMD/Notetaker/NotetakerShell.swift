@@ -38,6 +38,14 @@ struct NotetakerShell: View {
         .onAppear { registerHotkeys() }
         .onChange(of: settings.hotkey) { _, _ in registerHotkeys() }
         .onChange(of: settings.pushToTalkHotkey) { _, _ in registerHotkeys() }
+        .onChange(of: HotkeyCapture.shared.isCapturing) { _, isCapturing in
+            if isCapturing {
+                toggleHotkey.unregister()
+                pushToTalkHotkey.unregister()
+            } else {
+                registerHotkeys()
+            }
+        }
         .onChange(of: dictation.state) { _, state in
             guard case .failed(let message) = state else { return }
             island.isSessionActive = false
@@ -119,11 +127,19 @@ struct NotetakerShell: View {
     }
 
     private func registerHotkeys() {
-        toggleHotkey.register(
-            settings.hotkey,
-            onPress: { toggleDictation() },
-            onRelease: {}
-        )
+        if settings.hotkey.isFunctionKey || settings.pushToTalkHotkey.isFunctionKey {
+            GlobeKeyAction.disableIfNeeded()
+        }
+
+        guard !HotkeyCapture.shared.isCapturing else { return }
+
+        if settings.hotkey != settings.pushToTalkHotkey {
+            toggleHotkey.register(
+                settings.hotkey,
+                onPress: { toggleDictation() },
+                onRelease: {}
+            )
+        }
         pushToTalkHotkey.register(
             settings.pushToTalkHotkey,
             onPress: { pushToTalkPressed() },
