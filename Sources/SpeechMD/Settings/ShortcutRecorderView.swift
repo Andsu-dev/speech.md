@@ -19,17 +19,10 @@ struct ShortcutRecorderView: View {
                     .stroke(isRecording ? Theme.accent : Theme.border, lineWidth: isRecording ? 1.5 : 1)
             }
             .overlay {
-                HStack(spacing: 7) {
-                    Text(isRecording ? t("Pressione as teclas", "Press the keys") : binding.displayString)
-                        .font(.system(size: 13, weight: .medium, design: isRecording ? .default : .rounded))
-                        .foregroundStyle(isRecording ? Theme.accent : Theme.textPrimary)
-                    if !isRecording {
-                        Image(systemName: "pencil")
-                            .font(.system(size: 10))
-                            .foregroundStyle(Theme.textTertiary)
-                    }
-                }
-                .allowsHitTesting(false)
+                Text(isRecording ? t("Pressione as teclas", "Press the keys") : binding.displayString)
+                    .font(.system(size: 13, weight: .medium, design: isRecording ? .default : .rounded))
+                    .foregroundStyle(isRecording ? Theme.accent : Theme.textPrimary)
+                    .allowsHitTesting(false)
             }
     }
 }
