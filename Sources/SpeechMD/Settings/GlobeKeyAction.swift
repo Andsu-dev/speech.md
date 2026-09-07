@@ -13,7 +13,9 @@ enum GlobeKeyAction {
         return value == 0
     }
 
-    static func disable() {
+    static func disableIfNeeded() {
+        guard !isDisabled else { return }
+
         CFPreferencesSetValue(
             "AppleFnUsageType" as CFString,
             0 as CFNumber,

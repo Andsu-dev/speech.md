@@ -4,11 +4,7 @@ struct SettingsView: View {
     @Bindable var settings: AppSettings
 
     @State private var permissionsRefreshedAt = Date()
-    @State private var isGlobeDisabled = GlobeKeyAction.isDisabled
 
-    private var usesFunctionKey: Bool {
-        settings.hotkey.isFunctionKey || settings.pushToTalkHotkey.isFunctionKey
-    }
 
     var body: some View {
         ScrollView {
@@ -42,22 +38,6 @@ struct SettingsView: View {
                         subtitle: t("Um toque começa, o toque seguinte encerra e cola o texto.", "One tap starts, the next stops and pastes the text.")
                     ) {
                         ShortcutRecorderView(binding: $settings.hotkey)
-                    }
-
-                    if usesFunctionKey, !isGlobeDisabled {
-                        Divider().overlay(Theme.border)
-
-                        SettingsRow(
-                            title: t("Ação da tecla 🌐", "Globe key action"),
-                            subtitle: t("O macOS abre o painel de emoji ao pressionar fn, e isso atropela o atalho. Desligar exige sair e entrar na conta.", "macOS opens the emoji panel when fn is pressed, which fights the shortcut. Turning it off requires logging out and back in.")
-                        ) {
-                            Button(t("Desligar", "Turn off")) {
-                                GlobeKeyAction.disable()
-                                isGlobeDisabled = true
-                            }
-                            .controlSize(.large)
-                            .pointerStyle(.link)
-                        }
                     }
                 }
 
