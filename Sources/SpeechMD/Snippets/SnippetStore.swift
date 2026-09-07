@@ -64,6 +64,12 @@ final class SnippetStore {
                       options: [.caseInsensitive, .diacriticInsensitive],
                       range: searchStart..<result.endIndex
                   ) {
+                // "conte" não pode casar dentro de "acontece": o gatilho tem
+                // que ser a palavra inteira, não um pedaço dela.
+                guard Self.isWholeWord(range, in: result) else {
+                    searchStart = result.index(after: range.lowerBound)
+                    continue
+                }
                 result.replaceSubrange(range, with: snippet.expansion)
                 guard let next = result.index(
                     range.lowerBound,
@@ -74,6 +80,19 @@ final class SnippetStore {
             }
         }
         return result
+    }
+
+    static func isWholeWord(_ range: Range<String.Index>, in text: String) -> Bool {
+        let before = range.lowerBound > text.startIndex
+            ? text[text.index(before: range.lowerBound)]
+            : nil
+        let after = range.upperBound < text.endIndex ? text[range.upperBound] : nil
+        return !isWordCharacter(before) && !isWordCharacter(after)
+    }
+
+    private static func isWordCharacter(_ character: Character?) -> Bool {
+        guard let character else { return false }
+        return character.isLetter || character.isNumber
     }
 
     private func persist() {
