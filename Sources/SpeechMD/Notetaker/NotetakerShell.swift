@@ -15,11 +15,6 @@ struct NotetakerShell: View {
     @State private var meetings: [Meeting] = []
     @State private var meetingStartedAt: Date?
     @State private var elapsed: TimeInterval = 0
-    @State private var hotkeyPressedAt: Date?
-
-    /// Abaixo disso o atalho conta como toque, não como "segurar".
-    private static let tapThreshold: TimeInterval = 0.4
-
     var body: some View {
         HStack(spacing: 0) {
             SidebarView(selection: $selection, isCollapsed: $isSidebarCollapsed)
@@ -82,6 +77,7 @@ struct NotetakerShell: View {
             DictationView(
                 session: dictation,
                 hotkey: settings.hotkey,
+                hotkeyMode: settings.hotkeyMode,
                 onToggle: toggleDictation
             )
         case .notetaker:
@@ -130,9 +126,6 @@ struct NotetakerShell: View {
 
     /// Atalho global = ditado: é o único que precisa funcionar de dentro de
     /// outro app. Reunião e arquivo são acionados pela própria janela.
-    ///
-    /// Segurar → grava enquanto segura, solta e escreve.
-    /// Toque curto → trava gravando; o toque seguinte encerra e escreve.
     private func hotkeyPressed() {
         guard !model.phase.isRunning else { return }
 
@@ -140,18 +133,12 @@ struct NotetakerShell: View {
             finishDictation()
             return
         }
-        hotkeyPressedAt = Date()
         startDictation()
     }
 
     private func hotkeyReleased() {
-        guard dictation.isRunning, let pressedAt = hotkeyPressedAt else { return }
-        if Date().timeIntervalSince(pressedAt) < Self.tapThreshold {
-            dictation.isLatched = true // toque curto: segue ouvindo
-        } else {
-            finishDictation()
-        }
-        hotkeyPressedAt = nil
+        guard settings.hotkeyMode == .hold, dictation.isRunning else { return }
+        finishDictation()
     }
 
     private func toggleDictation() {

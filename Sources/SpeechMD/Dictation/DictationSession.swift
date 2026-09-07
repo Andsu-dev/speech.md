@@ -36,10 +36,6 @@ final class DictationSession {
     func clearHistory() {
         history.removeAll()
     }
-    /// Ditado iniciado por toque curto no atalho fica "travado" ouvindo até o
-    /// próximo toque; iniciado segurando, termina quando a tecla é solta.
-    var isLatched = false
-
     var isRunning: Bool {
         state == .listening || state == .starting
     }
@@ -104,7 +100,6 @@ final class DictationSession {
     func finish() {
         startTask?.cancel()
         startTask = nil
-        isLatched = false
 
         let currentPipeline = pipeline
         let target = targetApp

@@ -3,6 +3,7 @@ import SwiftUI
 struct DictationView: View {
     let session: DictationSession
     let hotkey: HotkeyBinding
+    let hotkeyMode: HotkeyMode
     let onToggle: () -> Void
 
     @State private var needsPermission = !TextInserter.isTrusted
@@ -69,7 +70,7 @@ struct DictationView: View {
                 Text(headerTitle)
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(.white)
-                Text(t("Segure o atalho e fale, ao soltar o texto é colado no app em foco. Um toque curto mantém ouvindo até o toque seguinte.", "Hold the shortcut and speak, on release the text is pasted into the focused app. A short tap keeps it listening until the next tap."))
+                Text(instructions)
                     .font(.system(size: 12))
                     .foregroundStyle(.white.opacity(0.7))
                     .fixedSize(horizontal: false, vertical: true)
@@ -93,7 +94,7 @@ struct DictationView: View {
                     Text(session.isRunning ? t("Parar", "Stop") : t("Falar", "Speak"))
                         .font(.system(size: 13, weight: .semibold))
                 }
-                .foregroundStyle(Theme.textPrimary)
+                .foregroundStyle(Theme.contrastSurface)
                 .padding(.horizontal, 16)
                 .frame(height: 34)
                 .background(.white, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
@@ -108,7 +109,7 @@ struct DictationView: View {
 
     private var headerTitle: String {
         guard session.isRunning else { return t("Escrever falando", "Write by speaking") }
-        return session.isLatched ? t("Ouvindo (travado)", "Listening (latched)") : t("Ouvindo…", "Listening…")
+        return t("Ouvindo…", "Listening…")
     }
 
     private var liveCard: some View {
@@ -131,6 +132,21 @@ struct DictationView: View {
         .overlay {
             RoundedRectangle(cornerRadius: Theme.cardRadius, style: .continuous)
                 .stroke(Theme.live.opacity(0.4), lineWidth: 1)
+        }
+    }
+
+    private var instructions: String {
+        switch hotkeyMode {
+        case .hold:
+            t(
+                "Segure \(hotkey.displayString) e fale, ao soltar o texto é colado no app em foco.",
+                "Hold \(hotkey.displayString) and speak, on release the text is pasted into the focused app."
+            )
+        case .toggle:
+            t(
+                "Toque \(hotkey.displayString) e fale, o toque seguinte encerra e cola o texto no app em foco.",
+                "Tap \(hotkey.displayString) and speak, the next tap stops and pastes into the focused app."
+            )
         }
     }
 
