@@ -88,6 +88,7 @@ final class DictationSession {
         targetIssue = TargetIssue.current(target: targetApp)
 
         if polishTerms { TermPolisher.prewarm() }
+        if formatAsMarkdown { TranscriptFormatter.prewarm() }
 
         state = .starting
         liveText = ""

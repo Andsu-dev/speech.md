@@ -3,7 +3,6 @@ import SwiftUI
 struct DictationView: View {
     let session: DictationSession
     let hotkey: HotkeyBinding
-    let pushToTalkHotkey: HotkeyBinding
     let onToggle: () -> Void
 
     @State private var needsPermission = !TextInserter.isTrusted
@@ -77,7 +76,7 @@ struct DictationView: View {
             }
             Spacer(minLength: 12)
 
-            Text(pushToTalkHotkey.displayString)
+            Text(hotkey.displayString)
                 .font(.system(size: 12, weight: .medium, design: .rounded))
                 .foregroundStyle(.white.opacity(0.75))
                 .padding(.horizontal, 11)
@@ -137,8 +136,8 @@ struct DictationView: View {
 
     private var instructions: String {
         t(
-            "Segure \(pushToTalkHotkey.displayString) e fale, ao soltar o texto é colado no app em foco. \(hotkey.displayString) começa e encerra a gravação num toque.",
-            "Hold \(pushToTalkHotkey.displayString) and speak, on release the text is pasted into the focused app. \(hotkey.displayString) starts and stops the recording on a tap."
+            "Segure \(hotkey.displayString) e fale: ao soltar, o texto é colado no app em foco. Dois toques rápidos travam a gravação até o toque seguinte.",
+            "Hold \(hotkey.displayString) and speak: on release the text is pasted into the focused app. Two quick taps keep it recording until the next tap."
         )
     }
 
@@ -185,7 +184,7 @@ struct DictationView: View {
             Text(t("Nada transcrito ainda", "Nothing transcribed yet"))
                 .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(Theme.textPrimary)
-            Text(t("Clique em Falar ou use \(pushToTalkHotkey.displayString) de qualquer app.", "Click Speak or press \(pushToTalkHotkey.displayString) from any app."))
+            Text(t("Clique em Falar ou use \(hotkey.displayString) de qualquer app.", "Click Speak or press \(hotkey.displayString) from any app."))
                 .font(.system(size: 13))
                 .foregroundStyle(Theme.textSecondary)
         }

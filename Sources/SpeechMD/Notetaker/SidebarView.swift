@@ -6,7 +6,7 @@ struct SidebarView: View {
 
     @Namespace private var selectionPill
 
-    private var width: CGFloat { isCollapsed ? 64 : 236 }
+    private var width: CGFloat { isCollapsed ? 80 : 236 }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -30,6 +30,13 @@ struct SidebarView: View {
             .padding(.horizontal, isCollapsed ? 8 : 12)
 
             Spacer(minLength: 24)
+
+            if !isCollapsed {
+                ContyAd()
+                    .padding(.horizontal, 12)
+                    .padding(.bottom, 12)
+                    .transition(.opacity)
+            }
 
             VStack(spacing: 2) {
                 NavRow(

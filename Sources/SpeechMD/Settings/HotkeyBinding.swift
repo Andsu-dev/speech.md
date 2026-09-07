@@ -5,8 +5,6 @@ import Carbon.HIToolbox
 struct HotkeyBinding: Equatable, Codable {
     var keyCode: UInt32
     var modifiers: UInt
-    /// Opcional para não invalidar os atalhos já salvos em UserDefaults.
-    var doubleTap: Bool?
 
     /// ⌥⌘R. Space com ⌘ é da busca do sistema e nunca chegaria ao app.
     static let `default` = HotkeyBinding(keyCode: 15, modifiers: NSEvent.ModifierFlags([.option, .command]).rawValue)
@@ -15,15 +13,7 @@ struct HotkeyBinding: Equatable, Codable {
 
     static let fn = HotkeyBinding(keyCode: fnKeyCode, modifiers: 0)
 
-    /// Dois toques em fn, como o ditado do próprio macOS.
-    static let fnDouble = HotkeyBinding(keyCode: fnKeyCode, modifiers: 0, doubleTap: true)
-
     var isFunctionKey: Bool { keyCode == Self.fnKeyCode }
-
-    var isDoubleTap: Bool { doubleTap == true }
-
-    /// Janela entre os dois toques, no gravador e no atalho global.
-    static let doubleTapWindow: TimeInterval = 0.4
 
     var modifierFlags: NSEvent.ModifierFlags {
         NSEvent.ModifierFlags(rawValue: modifiers)
@@ -31,7 +21,7 @@ struct HotkeyBinding: Equatable, Codable {
 
     /// "⌥⌘Space" — ordem igual à dos menus do sistema.
     var displayString: String {
-        if isFunctionKey { return isDoubleTap ? "fn fn" : "fn" }
+        if isFunctionKey { return "fn" }
         var result = ""
         if modifierFlags.contains(.control) { result += "⌃" }
         if modifierFlags.contains(.option) { result += "⌥" }
