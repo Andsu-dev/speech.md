@@ -39,9 +39,6 @@ struct NotetakerShell: View {
         .id(settings.localeIdentifier)
         .frame(minWidth: 1_060, minHeight: 700)
         .background(Theme.canvas)
-        // paleta do Theme é clara e fixa; sem isto sheets, campos e pickers
-        // herdam o dark do sistema e viram texto escuro sobre fundo escuro
-        .preferredColorScheme(.light)
         .onAppear { registerHotkey() }
         .onChange(of: settings.hotkey) { _, _ in registerHotkey() }
         .onChange(of: dictation.state) { _, state in

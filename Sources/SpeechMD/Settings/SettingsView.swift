@@ -171,7 +171,7 @@ private struct PermissionRow: View {
                         .foregroundStyle(.white)
                         .padding(.horizontal, 14)
                         .padding(.vertical, 7)
-                        .background(Theme.textPrimary, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                        .background(Theme.contrastSurface, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
                 }
                 .buttonStyle(.plain)
                 .pointerStyle(.link)

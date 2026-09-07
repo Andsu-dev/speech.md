@@ -103,7 +103,7 @@ struct DictationView: View {
         }
         .padding(.horizontal, 22)
         .padding(.vertical, 18)
-        .background(Theme.textPrimary, in: RoundedRectangle(cornerRadius: Theme.cardRadius, style: .continuous))
+        .background(Theme.contrastSurface, in: RoundedRectangle(cornerRadius: Theme.cardRadius, style: .continuous))
     }
 
     private var headerTitle: String {
@@ -156,7 +156,7 @@ struct DictationView: View {
                     .foregroundStyle(.white)
                     .padding(.horizontal, 14)
                     .padding(.vertical, 7)
-                    .background(Theme.textPrimary, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    .background(Theme.contrastSurface, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
             }
             .buttonStyle(.plain)
             .pointerStyle(.link)

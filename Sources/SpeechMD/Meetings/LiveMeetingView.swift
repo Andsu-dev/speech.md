@@ -66,7 +66,7 @@ struct LiveMeetingView: View {
         }
         .padding(.horizontal, 22)
         .padding(.vertical, 16)
-        .background(Theme.textPrimary, in: RoundedRectangle(cornerRadius: Theme.cardRadius, style: .continuous))
+        .background(Theme.contrastSurface, in: RoundedRectangle(cornerRadius: Theme.cardRadius, style: .continuous))
     }
 
     private func channel(

@@ -83,7 +83,7 @@ struct MeetingFeedView: View {
                                 .foregroundStyle(.white)
                                 .padding(.horizontal, 12)
                                 .padding(.vertical, 6)
-                                .background(Theme.textPrimary, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+                                .background(Theme.contrastSurface, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
                         }
                         .buttonStyle(.plain)
                         .pointerStyle(.link)
@@ -151,7 +151,7 @@ struct MeetingFeedView: View {
         }
         .padding(.horizontal, 22)
         .padding(.vertical, 18)
-        .background(Theme.textPrimary, in: RoundedRectangle(cornerRadius: Theme.cardRadius, style: .continuous))
+        .background(Theme.contrastSurface, in: RoundedRectangle(cornerRadius: Theme.cardRadius, style: .continuous))
     }
 }
 
