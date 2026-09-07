@@ -29,6 +29,7 @@ final class MeetingSession {
     var othersMetrics = RunMetrics.empty
     var localeIdentifier = "pt-BR"
     var recognitionMode: RecognitionMode = .lowLatency
+    var inputDeviceUID = ""
 
     private var youPipeline: SpeechPipeline?
     private var othersPipeline: SpeechPipeline?
@@ -43,7 +44,11 @@ final class MeetingSession {
         reset()
 
         runTask = Task(priority: .userInitiated) {
-            let you = SpeechPipeline(localeIdentifier: localeIdentifier, mode: recognitionMode)
+            let you = SpeechPipeline(
+                localeIdentifier: localeIdentifier,
+                mode: recognitionMode,
+                inputDeviceUID: inputDeviceUID.isEmpty ? nil : inputDeviceUID
+            )
             let others = SpeechPipeline(localeIdentifier: localeIdentifier, mode: recognitionMode)
             youPipeline = you
             othersPipeline = others
@@ -89,7 +94,11 @@ final class MeetingSession {
 
         runTask = Task(priority: .userInitiated) {
             do {
-                let you = SpeechPipeline(localeIdentifier: localeIdentifier, mode: recognitionMode)
+                let you = SpeechPipeline(
+                    localeIdentifier: localeIdentifier,
+                    mode: recognitionMode,
+                    inputDeviceUID: inputDeviceUID.isEmpty ? nil : inputDeviceUID
+                )
                 youPipeline = you
                 try await you.startMicrophone { [weak self] event in
                     self?.youTranscript = event.accumulatedText
