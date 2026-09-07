@@ -1,9 +1,9 @@
 import AppKit
 import Carbon.HIToolbox
 
-/// Atalho global via Carbon. É a única rota que dispensa a permissão de
-/// Acessibilidade — `NSEvent.addGlobalMonitorForEvents` exigiria, e é por isso
-/// que a tecla fn, que o Carbon não registra, depende dela.
+/// Atalho global via Carbon, que o sistema resolve sem pedir Acessibilidade.
+/// A tecla fn o Carbon não registra: ela vem do `FunctionKeyTap`, que depende
+/// de Acessibilidade justamente por interceptar o evento antes do sistema.
 @MainActor
 final class GlobalHotkey {
     private let id: UInt32
@@ -14,9 +14,7 @@ final class GlobalHotkey {
 
     private var hotKeyRef: EventHotKeyRef?
     private var eventHandler: EventHandlerRef?
-    private var flagsMonitors: [Any] = []
-    private var isFunctionKeyDown = false
-    private var lastFunctionTapAt: Date?
+    private let functionKeyTap = FunctionKeyTap()
     private var onPress: (() -> Void)?
     private var onRelease: (() -> Void)?
 
@@ -33,7 +31,7 @@ final class GlobalHotkey {
         self.onRelease = onRelease
 
         guard !binding.isFunctionKey else {
-            observeFunctionKey(doubleTap: binding.isDoubleTap)
+            observeFunctionKey()
             return
         }
 
@@ -54,46 +52,17 @@ final class GlobalHotkey {
             UnregisterEventHotKey(hotKeyRef)
             self.hotKeyRef = nil
         }
-        flagsMonitors.forEach(NSEvent.removeMonitor)
-        flagsMonitors = []
-        isFunctionKeyDown = false
-        lastFunctionTapAt = nil
+        functionKeyTap.stop()
     }
 
-    /// No duplo toque não existe "segurar": o segundo toque dispara e pronto,
-    /// então quem usa esse binding trata como liga/desliga.
-    private func observeFunctionKey(doubleTap: Bool) {
-        let handle: (NSEvent) -> Void = { [weak self] event in
-            guard let self, event.keyCode == HotkeyBinding.fnKeyCode else { return }
-            let isDown = event.modifierFlags.contains(.function)
-            guard isDown != isFunctionKeyDown else { return }
-            isFunctionKeyDown = isDown
-
-            guard doubleTap else {
-                isDown ? onPress?() : onRelease?()
-                return
-            }
-            guard isDown else { return }
-
-            let now = Date()
-            if let last = lastFunctionTapAt,
-               now.timeIntervalSince(last) <= HotkeyBinding.doubleTapWindow {
-                lastFunctionTapAt = nil
-                onPress?()
-            } else {
-                lastFunctionTapAt = now
-            }
+    private func observeFunctionKey() {
+        let handle: (Bool) -> Void = { [weak self] isDown in
+            guard let self else { return }
+            isDown ? onPress?() : onRelease?()
         }
 
-        if let global = NSEvent.addGlobalMonitorForEvents(matching: .flagsChanged, handler: handle) {
-            flagsMonitors.append(global)
-        }
-        if let local = NSEvent.addLocalMonitorForEvents(matching: .flagsChanged, handler: { event in
-            handle(event)
-            return event
-        }) {
-            flagsMonitors.append(local)
-        }
+        functionKeyTap.onChange = handle
+        functionKeyTap.start()
     }
 
     /// Press E release: é o release que permite o "segura pra falar".

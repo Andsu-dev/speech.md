@@ -61,16 +61,8 @@ final class KeyCaptureNSView: NSView {
     var onCapture: ((HotkeyBinding) -> Void)?
 
     private var isRecording = false {
-        didSet {
-            if !isRecording {
-                singleTapTask?.cancel()
-                singleTapTask = nil
-            }
-            onRecordingChange?(isRecording)
-        }
+        didSet { onRecordingChange?(isRecording) }
     }
-
-    private var singleTapTask: Task<Void, Never>?
 
     override var acceptsFirstResponder: Bool { true }
 
@@ -84,28 +76,13 @@ final class KeyCaptureNSView: NSView {
         return true
     }
 
-    /// fn não é gravado no primeiro toque: sem esperar a janela do duplo toque
-    /// não dá para distinguir "fn" de "fn fn".
     override func flagsChanged(with event: NSEvent) {
         guard isRecording, event.keyCode == HotkeyBinding.fnKeyCode else {
             super.flagsChanged(with: event)
             return
         }
         guard event.modifierFlags.contains(.function) else { return }
-
-        if singleTapTask != nil {
-            singleTapTask?.cancel()
-            singleTapTask = nil
-            capture(.fnDouble)
-            return
-        }
-
-        singleTapTask = Task { [weak self] in
-            try? await Task.sleep(for: .seconds(HotkeyBinding.doubleTapWindow))
-            guard !Task.isCancelled, let self else { return }
-            singleTapTask = nil
-            capture(.fn)
-        }
+        capture(.fn)
     }
 
     private func capture(_ binding: HotkeyBinding) {
