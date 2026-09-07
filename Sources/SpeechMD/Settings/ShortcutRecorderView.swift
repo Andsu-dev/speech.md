@@ -12,7 +12,8 @@ struct ShortcutRecorderView: View {
 
     var body: some View {
         KeyCaptureView(isRecording: $isRecording, binding: $binding)
-            .frame(width: 150, height: 34)
+            .frame(maxWidth: .infinity)
+            .frame(height: 34)
             .background(isRecording ? Theme.accent.opacity(0.08) : Theme.surface, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
             .overlay {
                 RoundedRectangle(cornerRadius: 9, style: .continuous)
