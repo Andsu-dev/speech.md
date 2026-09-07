@@ -19,8 +19,18 @@ side by side.
 **Files** — drop in an audio file and get a transcript, along with how many
 times faster than real time it ran.
 
+**Microphone** — pick which input device dictation and your meeting track
+listen to, or leave it on the system default.
+
 **Dictionary** — voice shortcuts: say "my email" and your full address comes
 out.
+
+**Foreign terms** — the recognizer gets a vocabulary hint before it listens
+(`AnalysisContext.contextualStrings`): the technical English people mix into
+Portuguese, plus whatever is in your dictionary. "function" comes out spelled
+right during transcription, at no latency cost. An optional second pass sends
+still-unknown words through the on-device model, one word at a time; it is off
+by default because it adds about a second before pasting.
 
 **Markdown** — optional. An on-device model (Foundation Models) reformats the
 dictation before pasting, turning spoken lists into bullets and fixing
@@ -36,6 +46,9 @@ audio generated with `say`, three runs.
 | File transcription | **75× real time** (27.7s of audio in 0.37s) |
 | Markdown formatting, 14 words | 0.62s (0.43–0.93) |
 | Markdown formatting, 56 words | 1.02s (0.90–1.12) |
+| Vocabulary hint to the recognizer | 0s (runs inside transcription) |
+| Optional term pass, 1 word | 0.28s |
+| Optional term pass, 2 words | 0.98s |
 
 Formatting only runs when enabled, and it runs *after* transcription — it adds
 latency between releasing the hotkey and the text appearing, not while you
@@ -125,7 +138,7 @@ Sources/SpeechMD/
 ├── Meetings/     two-channel meeting recording
 ├── Files/        file transcription
 ├── Snippets/     voice shortcut dictionary
-├── Formatting/   on-device Markdown pass
+├── Formatting/   on-device Markdown and foreign-term passes
 ├── Island/       floating indicator by the notch
 ├── Settings/     preferences, global hotkey, permissions
 └── Notetaker/    interface shell
