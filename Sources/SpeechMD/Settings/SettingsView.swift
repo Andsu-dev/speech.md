@@ -29,6 +29,36 @@ struct SettingsView: View {
                     ) {
                         ShortcutRecorderView(binding: $settings.hotkey)
                     }
+
+                    Divider().overlay(Theme.border)
+
+                    SettingsRow(
+                        title: t("Modo do atalho", "Shortcut mode"),
+                        subtitle: t("Pressione para falar grava enquanto a tecla está pressionada. Clicar e gravar começa num toque e para no seguinte.", "Push to talk records while the key is held. Click and record starts on one tap and stops on the next.")
+                    ) {
+                        Picker("", selection: $settings.hotkeyMode) {
+                            ForEach(HotkeyMode.allCases) { mode in
+                                Text(mode.label).tag(mode)
+                            }
+                        }
+                        .labelsHidden()
+                        .frame(width: 168)
+                    }
+                }
+
+                SettingsGroup(t("Aparência", "Appearance")) {
+                    SettingsRow(
+                        title: t("Tema", "Theme"),
+                        subtitle: t("Sistema acompanha o ajuste do macOS.", "System follows the macOS setting.")
+                    ) {
+                        Picker("", selection: $settings.appearance) {
+                            ForEach(AppAppearance.allCases) { appearance in
+                                Text(appearance.label).tag(appearance)
+                            }
+                        }
+                        .labelsHidden()
+                        .frame(width: 168)
+                    }
                 }
 
                 SettingsGroup(t("Transcrição", "Transcription")) {
