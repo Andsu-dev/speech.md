@@ -35,7 +35,11 @@ struct NotetakerShell: View {
         .id(settings.localeIdentifier)
         .frame(minWidth: 1_060, minHeight: 700)
         .background(Theme.canvas)
-        .onAppear { registerHotkeys() }
+        .onAppear {
+            registerHotkeys()
+            dictation.onFinish = handleDictationOutcome
+            dictation.onFailure = handleDictationFailure
+        }
         .onChange(of: settings.hotkey) { _, _ in registerHotkeys() }
         .onChange(of: settings.pushToTalkHotkey) { _, _ in registerHotkeys() }
         .onChange(of: HotkeyCapture.shared.isCapturing) { _, isCapturing in
@@ -44,25 +48,6 @@ struct NotetakerShell: View {
                 pushToTalkHotkey.unregister()
             } else {
                 registerHotkeys()
-            }
-        }
-        .onChange(of: dictation.state) { _, state in
-            guard case .failed(let message) = state else { return }
-            island.isSessionActive = false
-            island.flashWarning(String(message.prefix(28)))
-            playFeedback(.warning)
-        }
-        .onChange(of: dictation.outcome) { _, outcome in
-            guard let outcome else { return }
-            island.isProcessing = false
-            if outcome.needsCopy {
-                island.showResult(outcome.text)
-                playFeedback(.warning)
-            } else {
-                island.isVisible = false
-                if !outcome.text.isEmpty {
-                    playFeedback(.finish)
-                }
             }
         }
         .onChange(of: model.phase) { _, phase in
@@ -123,6 +108,26 @@ struct NotetakerShell: View {
             SnippetsView(store: snippets)
         case .settings:
             SettingsView(settings: settings)
+        }
+    }
+
+    private func handleDictationFailure(_ message: String) {
+        island.isSessionActive = false
+        island.isProcessing = false
+        island.flashWarning(String(message.prefix(28)))
+        playFeedback(.warning)
+    }
+
+    private func handleDictationOutcome(_ outcome: DictationOutcome) {
+        island.isProcessing = false
+        if outcome.needsCopy {
+            island.showResult(outcome.text)
+            playFeedback(.warning)
+        } else {
+            island.isVisible = false
+            if !outcome.text.isEmpty {
+                playFeedback(.finish)
+            }
         }
     }
 

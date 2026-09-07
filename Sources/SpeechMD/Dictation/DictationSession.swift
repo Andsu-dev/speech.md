@@ -8,8 +8,7 @@ struct Dictation: Identifiable, Equatable {
     let createdAt: Date
 }
 
-struct DictationOutcome: Identifiable, Equatable {
-    let id = UUID()
+struct DictationOutcome {
     let text: String
     let needsCopy: Bool
 }
@@ -56,7 +55,11 @@ final class DictationSession {
 
     var hasEditableTarget: Bool { targetIssue == nil }
 
-    private(set) var outcome: DictationOutcome?
+    /// Entregue direto por callback, não por `onChange` no SwiftUI: com a
+    /// janela ocluída o body para de ser avaliado e a ilha ficava girando pra
+    /// sempre mesmo com o texto já colado.
+    var onFinish: ((DictationOutcome) -> Void)?
+    var onFailure: ((String) -> Void)?
 
     private var pipeline: SpeechPipeline?
     private var startTask: Task<Void, Never>?
@@ -92,6 +95,7 @@ final class DictationSession {
             } catch {
                 state = .failed(error.localizedDescription)
                 pipeline = nil
+                onFailure?(error.localizedDescription)
             }
         }
     }
@@ -115,7 +119,7 @@ final class DictationSession {
             let raw = liveText.trimmingCharacters(in: .whitespacesAndNewlines)
             liveText = ""
             guard !raw.isEmpty else {
-                outcome = DictationOutcome(text: "", needsCopy: false)
+                onFinish?(DictationOutcome(text: "", needsCopy: false))
                 return
             }
 
@@ -125,11 +129,11 @@ final class DictationSession {
             }
             history.insert(Dictation(text: text, createdAt: Date()), at: 0)
             guard hasEditableTarget else {
-                outcome = DictationOutcome(text: text, needsCopy: true)
+                onFinish?(DictationOutcome(text: text, needsCopy: true))
                 return
             }
             await TextInserter.insert(text, into: target)
-            outcome = DictationOutcome(text: text, needsCopy: false)
+            onFinish?(DictationOutcome(text: text, needsCopy: false))
         }
     }
 }
