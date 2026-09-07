@@ -3,7 +3,6 @@ import SwiftUI
 struct DictationView: View {
     let session: DictationSession
     let hotkey: HotkeyBinding
-    let hotkeyMode: HotkeyMode
     let onToggle: () -> Void
 
     @State private var needsPermission = !TextInserter.isTrusted
@@ -136,18 +135,10 @@ struct DictationView: View {
     }
 
     private var instructions: String {
-        switch hotkeyMode {
-        case .hold:
-            t(
-                "Segure \(hotkey.displayString) e fale, ao soltar o texto é colado no app em foco.",
-                "Hold \(hotkey.displayString) and speak, on release the text is pasted into the focused app."
-            )
-        case .toggle:
-            t(
-                "Toque \(hotkey.displayString) e fale, o toque seguinte encerra e cola o texto no app em foco.",
-                "Tap \(hotkey.displayString) and speak, the next tap stops and pastes into the focused app."
-            )
-        }
+        t(
+            "Segure \(hotkey.displayString) e fale, ao soltar o texto é colado no app em foco. Dois toques gravam até o toque seguinte.",
+            "Hold \(hotkey.displayString) and speak, on release the text is pasted into the focused app. A double tap records until the next tap."
+        )
     }
 
     private var permissionCard: some View {

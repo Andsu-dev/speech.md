@@ -24,25 +24,10 @@ struct SettingsView: View {
 
                 SettingsGroup(t("Atalho", "Shortcut")) {
                     SettingsRow(
-                        title: t("Iniciar e parar gravação", "Start and stop recording"),
-                        subtitle: t("Funciona com qualquer app em foco.", "Works with any focused app.")
+                        title: t("Tecla do ditado", "Dictation key"),
+                        subtitle: t("Segure para falar, ou toque duas vezes para gravar até o toque seguinte. Funciona com qualquer app em foco.", "Hold to talk, or double tap to record until the next tap. Works with any focused app.")
                     ) {
                         ShortcutRecorderView(binding: $settings.hotkey)
-                    }
-
-                    Divider().overlay(Theme.border)
-
-                    SettingsRow(
-                        title: t("Modo do atalho", "Shortcut mode"),
-                        subtitle: t("Pressione para falar grava enquanto a tecla está pressionada. Clicar e gravar começa num toque e para no seguinte.", "Push to talk records while the key is held. Click and record starts on one tap and stops on the next.")
-                    ) {
-                        Picker("", selection: $settings.hotkeyMode) {
-                            ForEach(HotkeyMode.allCases) { mode in
-                                Text(mode.label).tag(mode)
-                            }
-                        }
-                        .labelsHidden()
-                        .frame(width: 168)
                     }
                 }
 
@@ -57,7 +42,7 @@ struct SettingsView: View {
                             }
                         }
                         .labelsHidden()
-                        .frame(width: 168)
+                        .frame(maxWidth: .infinity)
                     }
                 }
 
@@ -72,7 +57,7 @@ struct SettingsView: View {
                             Text("Español").tag("es-ES")
                         }
                         .labelsHidden()
-                        .frame(width: 168)
+                        .frame(maxWidth: .infinity)
                     }
 
                     Divider().overlay(Theme.border)
@@ -87,7 +72,7 @@ struct SettingsView: View {
                             }
                         }
                         .labelsHidden()
-                        .frame(width: 168)
+                        .frame(maxWidth: .infinity)
                     }
                 }
 
@@ -264,6 +249,7 @@ private struct SettingsRow<Control: View>: View {
             }
             Spacer(minLength: 12)
             control
+                .frame(width: 180, alignment: .trailing)
         }
         .padding(.horizontal, 18)
         .padding(.vertical, 15)

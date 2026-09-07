@@ -24,10 +24,6 @@ final class AppSettings {
         }
     }
 
-    var hotkeyMode: HotkeyMode {
-        didSet { defaults.set(hotkeyMode.rawValue, forKey: Keys.hotkeyMode) }
-    }
-
     var recognitionMode: RecognitionMode {
         didSet { defaults.set(recognitionMode.rawValue, forKey: Keys.recognitionMode) }
     }
@@ -59,8 +55,6 @@ final class AppSettings {
         localeIdentifier = defaults.string(forKey: Keys.locale) ?? "pt-BR"
         appearance = defaults.string(forKey: Keys.appearance)
             .flatMap(AppAppearance.init(rawValue:)) ?? .system
-        hotkeyMode = defaults.string(forKey: Keys.hotkeyMode)
-            .flatMap(HotkeyMode.init(rawValue:)) ?? .toggle
         recognitionMode = defaults.string(forKey: Keys.recognitionMode)
             .flatMap(RecognitionMode.init(rawValue:)) ?? .lowLatency
         captureSystemAudio = defaults.object(forKey: Keys.captureSystemAudio) as? Bool ?? true
@@ -86,7 +80,6 @@ final class AppSettings {
         static let hotkey = "hotkey"
         static let locale = "localeIdentifier"
         static let appearance = "appearance"
-        static let hotkeyMode = "hotkeyMode"
         static let recognitionMode = "recognitionMode"
         static let captureSystemAudio = "captureSystemAudio"
         static let showIsland = "showIsland"

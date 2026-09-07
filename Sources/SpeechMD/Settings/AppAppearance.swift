@@ -24,17 +24,3 @@ enum AppAppearance: String, CaseIterable, Identifiable {
         }
     }
 }
-
-enum HotkeyMode: String, CaseIterable, Identifiable {
-    case toggle
-    case hold
-
-    var id: Self { self }
-
-    var label: String {
-        switch self {
-        case .toggle: t("Clicar e gravar", "Click and record")
-        case .hold: t("Pressione para falar", "Push to talk")
-        }
-    }
-}

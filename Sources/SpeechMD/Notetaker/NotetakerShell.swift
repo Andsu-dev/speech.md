@@ -15,6 +15,12 @@ struct NotetakerShell: View {
     @State private var meetings: [Meeting] = []
     @State private var meetingStartedAt: Date?
     @State private var elapsed: TimeInterval = 0
+    @State private var pressedAt: Date?
+    @State private var isLatched = false
+    @State private var secondTapWindow: Task<Void, Never>?
+
+    /// Acima disso o atalho conta como "segurar", não como toque.
+    private static let tapThreshold: TimeInterval = 0.35
     var body: some View {
         HStack(spacing: 0) {
             SidebarView(selection: $selection, isCollapsed: $isSidebarCollapsed)
@@ -77,7 +83,6 @@ struct NotetakerShell: View {
             DictationView(
                 session: dictation,
                 hotkey: settings.hotkey,
-                hotkeyMode: settings.hotkeyMode,
                 onToggle: toggleDictation
             )
         case .notetaker:
@@ -129,16 +134,44 @@ struct NotetakerShell: View {
     private func hotkeyPressed() {
         guard !model.phase.isRunning else { return }
 
-        if dictation.isRunning {
+        if isLatched {
+            isLatched = false
+            secondTapWindow?.cancel()
+            secondTapWindow = nil
             finishDictation()
             return
         }
+
+        if dictation.isRunning, secondTapWindow != nil {
+            secondTapWindow?.cancel()
+            secondTapWindow = nil
+            isLatched = true
+            return
+        }
+
+        pressedAt = Date()
         startDictation()
     }
 
+    /// Soltar rápido não encerra na hora: é preciso dar tempo do segundo toque
+    /// chegar, senão o duplo toque nunca aconteceria.
     private func hotkeyReleased() {
-        guard settings.hotkeyMode == .hold, dictation.isRunning else { return }
-        finishDictation()
+        guard dictation.isRunning, let pressedAt else { return }
+        let held = Date().timeIntervalSince(pressedAt)
+        self.pressedAt = nil
+
+        guard held < Self.tapThreshold else {
+            finishDictation()
+            return
+        }
+
+        secondTapWindow = Task {
+            try? await Task.sleep(for: .milliseconds(340))
+            guard !Task.isCancelled else { return }
+            secondTapWindow = nil
+            guard !isLatched else { return }
+            finishDictation()
+        }
     }
 
     private func toggleDictation() {
@@ -159,6 +192,7 @@ struct NotetakerShell: View {
     }
 
     private func finishDictation() {
+        isLatched = false
         dictation.finish()
         island.isSessionActive = false
         island.warning = nil
