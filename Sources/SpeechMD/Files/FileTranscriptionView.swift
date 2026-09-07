@@ -38,8 +38,9 @@ struct FileTranscriptionView: View {
                 .multilineTextAlignment(.center)
 
             if !model.isBusy {
-                Button("Escolher arquivo…", action: onChooseFile)
+                Button(t("Escolher arquivo…", "Choose file…"), action: onChooseFile)
                     .controlSize(.large)
+                    .pointerStyle(.link)
                     .padding(.top, 6)
             }
         }
@@ -66,7 +67,7 @@ struct FileTranscriptionView: View {
     private var transcriptCard: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text("TRANSCRIÇÃO")
+                Text(t("TRANSCRIÇÃO", "TRANSCRIPT"))
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(Theme.textTertiary)
                     .tracking(0.6)
@@ -76,10 +77,12 @@ struct FileTranscriptionView: View {
                         .font(.system(size: 11).monospacedDigit())
                         .foregroundStyle(Theme.textTertiary)
                 }
-                Button("Copiar") { model.copyTranscript() }
+                Button(t("Copiar", "Copy")) { model.copyTranscript() }
                     .controlSize(.small)
-                Button("Salvar…") { model.saveTranscript(suggestedName: fileName) }
+                    .pointerStyle(.link)
+                Button(t("Salvar…", "Save…")) { model.saveTranscript(suggestedName: fileName) }
                     .controlSize(.small)
+                    .pointerStyle(.link)
             }
 
             Text(model.transcript)
@@ -107,18 +110,18 @@ struct FileTranscriptionView: View {
 
     private var statusTitle: String {
         switch model.state {
-        case .idle: "Transcrever um arquivo"
-        case .transcribing(let name): "Transcrevendo \(name)"
+        case .idle: t("Transcrever um arquivo", "Transcribe a file")
+        case .transcribing(let name): t("Transcrevendo \(name)", "Transcribing \(name)")
         case .done(let name): name
-        case .failed: "Não deu para transcrever"
+        case .failed: t("Não deu para transcrever", "Could not transcribe")
         }
     }
 
     private var statusSubtitle: String {
         switch model.state {
-        case .idle: "Arraste um áudio aqui ou escolha do disco. Tudo roda no seu Mac."
-        case .transcribing: "Processando no dispositivo…"
-        case .done: "Pronto. Arraste outro arquivo para transcrever de novo."
+        case .idle: t("Arraste um áudio aqui ou escolha do disco. Tudo roda no seu Mac.", "Drop an audio file here or pick one from disk. Everything runs on your Mac.")
+        case .transcribing: t("Processando no dispositivo…", "Processing on device…")
+        case .done: t("Pronto. Arraste outro arquivo para transcrever de novo.", "Done. Drop another file to transcribe again.")
         case .failed(let message): message
         }
     }

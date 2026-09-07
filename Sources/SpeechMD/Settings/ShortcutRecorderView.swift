@@ -1,5 +1,16 @@
 import AppKit
+import Observation
 import SwiftUI
+
+/// Enquanto um campo grava, os atalhos globais saem do ar: um hotkey do Carbon
+/// consome a combinação antes de qualquer view, e a tecla nunca chegaria aqui.
+@MainActor
+@Observable
+final class HotkeyCapture {
+    static let shared = HotkeyCapture()
+
+    var isCapturing = false
+}
 
 /// Campo que captura a próxima combinação de teclas pressionada.
 ///
@@ -12,24 +23,18 @@ struct ShortcutRecorderView: View {
 
     var body: some View {
         KeyCaptureView(isRecording: $isRecording, binding: $binding)
-            .frame(width: 150, height: 34)
+            .frame(maxWidth: .infinity)
+            .frame(height: 34)
             .background(isRecording ? Theme.accent.opacity(0.08) : Theme.surface, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
             .overlay {
                 RoundedRectangle(cornerRadius: 9, style: .continuous)
                     .stroke(isRecording ? Theme.accent : Theme.border, lineWidth: isRecording ? 1.5 : 1)
             }
             .overlay {
-                HStack(spacing: 7) {
-                    Text(isRecording ? "Pressione as teclas" : binding.displayString)
-                        .font(.system(size: 13, weight: .medium, design: isRecording ? .default : .rounded))
-                        .foregroundStyle(isRecording ? Theme.accent : Theme.textPrimary)
-                    if !isRecording {
-                        Image(systemName: "pencil")
-                            .font(.system(size: 10))
-                            .foregroundStyle(Theme.textTertiary)
-                    }
-                }
-                .allowsHitTesting(false)
+                Text(isRecording ? t("Pressione as teclas", "Press the keys") : binding.displayString)
+                    .font(.system(size: 13, weight: .medium, design: isRecording ? .default : .rounded))
+                    .foregroundStyle(isRecording ? Theme.accent : Theme.textPrimary)
+                    .allowsHitTesting(false)
             }
     }
 }
@@ -40,7 +45,10 @@ private struct KeyCaptureView: NSViewRepresentable {
 
     func makeNSView(context: Context) -> KeyCaptureNSView {
         let view = KeyCaptureNSView()
-        view.onRecordingChange = { isRecording = $0 }
+        view.onRecordingChange = {
+            isRecording = $0
+            HotkeyCapture.shared.isCapturing = $0
+        }
         view.onCapture = { binding = $0 }
         return view
     }
@@ -66,6 +74,16 @@ final class KeyCaptureNSView: NSView {
     override func resignFirstResponder() -> Bool {
         isRecording = false
         return true
+    }
+
+    override func flagsChanged(with event: NSEvent) {
+        guard isRecording, event.keyCode == HotkeyBinding.fnKeyCode else {
+            super.flagsChanged(with: event)
+            return
+        }
+        guard event.modifierFlags.contains(.function) else { return }
+        onCapture?(.fn)
+        isRecording = false
     }
 
     override func keyDown(with event: NSEvent) {

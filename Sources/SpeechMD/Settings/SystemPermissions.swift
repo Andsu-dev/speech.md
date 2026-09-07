@@ -13,17 +13,23 @@ enum SystemPermission: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .microphone: "Microfone"
-        case .screenRecording: "Gravação de tela"
-        case .accessibility: "Acessibilidade"
+        case .microphone: t("Microfone", "Microphone")
+        case .screenRecording: t("Gravação de tela", "Screen recording")
+        case .accessibility: t("Acessibilidade", "Accessibility")
         }
     }
 
     var reason: String {
         switch self {
-        case .microphone: "Transcrever a sua voz."
-        case .screenRecording: "Capturar o áudio dos outros participantes da reunião."
-        case .accessibility: "Colar o texto ditado no app em foco."
+        case .microphone: t("Transcrever a sua voz.", "Transcribe your voice.")
+        case .screenRecording: t(
+            "Capturar o áudio dos outros participantes da reunião.",
+            "Capture the audio of the other people in the meeting."
+        )
+        case .accessibility: t(
+            "Colar o texto ditado no app em foco.",
+            "Paste the dictated text into the focused app."
+        )
         }
     }
 

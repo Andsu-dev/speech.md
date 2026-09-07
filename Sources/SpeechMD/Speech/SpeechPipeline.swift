@@ -11,8 +11,8 @@ enum RecognitionMode: String, CaseIterable, Identifiable, Sendable {
 
     var label: String {
         switch self {
-        case .lowLatency: "Baixa latência"
-        case .quality: "Maior precisão"
+        case .lowLatency: t("Baixa latência", "Low latency")
+        case .quality: t("Maior precisão", "Higher accuracy")
         }
     }
 }
@@ -54,11 +54,11 @@ enum SpeechPipelineError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .unavailable:
-            "SpeechTranscriber não está disponível neste Mac."
+            t("SpeechTranscriber não está disponível neste Mac.", "SpeechTranscriber is not available on this Mac.")
         case .unsupportedLocale(let locale):
-            "O locale \(locale) não é suportado pelo SpeechTranscriber."
+            t("O locale \(locale) não é suportado pelo SpeechTranscriber.", "The locale \(locale) is not supported by SpeechTranscriber.")
         case .noMicrophone:
-            "Nenhum microfone foi encontrado."
+            t("Nenhum microfone foi encontrado.", "No microphone was found.")
         }
     }
 }
@@ -211,7 +211,7 @@ actor SpeechPipeline {
     private func preparePipeline() async throws -> PreparedPipeline {
         let options = SpeechAnalyzer.Options(
             priority: .high,
-            modelRetention: .processLifetime
+            modelRetention: .lingering
         )
 
         switch mode {

@@ -2,15 +2,24 @@ import AppKit
 import Carbon.HIToolbox
 
 /// Atalho global via Carbon. É a única rota que dispensa a permissão de
-/// Acessibilidade — `NSEvent.addGlobalMonitorForEvents` exigiria.
+/// Acessibilidade — `NSEvent.addGlobalMonitorForEvents` exigiria, e é por isso
+/// que a tecla fn, que o Carbon não registra, depende dela.
 @MainActor
 final class GlobalHotkey {
+    private let id: UInt32
+
+    init(id: UInt32) {
+        self.id = id
+    }
+
     private var hotKeyRef: EventHotKeyRef?
     private var eventHandler: EventHandlerRef?
+    private var flagsMonitors: [Any] = []
+    private var isFunctionKeyDown = false
     private var onPress: (() -> Void)?
     private var onRelease: (() -> Void)?
 
-    private static let signature = OSType(0x53504348) // 'SPCH'
+    fileprivate static let signature = OSType(0x53504348) // 'SPCH'
 
     func register(
         _ binding: HotkeyBinding,
@@ -22,12 +31,17 @@ final class GlobalHotkey {
         self.onPress = onPress
         self.onRelease = onRelease
 
+        guard !binding.isFunctionKey else {
+            observeFunctionKey()
+            return
+        }
+
         installHandlerIfNeeded()
 
         RegisterEventHotKey(
             binding.keyCode,
             carbonModifiers(from: binding.modifierFlags),
-            EventHotKeyID(signature: Self.signature, id: 1),
+            EventHotKeyID(signature: Self.signature, id: id),
             GetEventDispatcherTarget(),
             0,
             &hotKeyRef
@@ -38,6 +52,29 @@ final class GlobalHotkey {
         if let hotKeyRef {
             UnregisterEventHotKey(hotKeyRef)
             self.hotKeyRef = nil
+        }
+        flagsMonitors.forEach(NSEvent.removeMonitor)
+        flagsMonitors = []
+        isFunctionKeyDown = false
+    }
+
+    private func observeFunctionKey() {
+        let handle: (NSEvent) -> Void = { [weak self] event in
+            guard let self, event.keyCode == HotkeyBinding.fnKeyCode else { return }
+            let isDown = event.modifierFlags.contains(.function)
+            guard isDown != isFunctionKeyDown else { return }
+            isFunctionKeyDown = isDown
+            isDown ? onPress?() : onRelease?()
+        }
+
+        if let global = NSEvent.addGlobalMonitorForEvents(matching: .flagsChanged, handler: handle) {
+            flagsMonitors.append(global)
+        }
+        if let local = NSEvent.addLocalMonitorForEvents(matching: .flagsChanged, handler: { event in
+            handle(event)
+            return event
+        }) {
+            flagsMonitors.append(local)
         }
     }
 
@@ -61,6 +98,21 @@ final class GlobalHotkey {
             { _, event, userData in
                 guard let userData else { return noErr }
                 let hotkey = Unmanaged<GlobalHotkey>.fromOpaque(userData).takeUnretainedValue()
+
+                var fired = EventHotKeyID()
+                GetEventParameter(
+                    event,
+                    EventParamName(kEventParamDirectObject),
+                    EventParamType(typeEventHotKeyID),
+                    nil,
+                    MemoryLayout<EventHotKeyID>.size,
+                    nil,
+                    &fired
+                )
+                guard fired.signature == GlobalHotkey.signature, fired.id == hotkey.id else {
+                    return OSStatus(eventNotHandledErr)
+                }
+
                 let isRelease = GetEventKind(event) == UInt32(kEventHotKeyReleased)
                 DispatchQueue.main.async {
                     MainActor.assumeIsolated {

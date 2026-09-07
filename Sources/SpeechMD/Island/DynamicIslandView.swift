@@ -10,6 +10,8 @@ struct DynamicIslandView: View {
     /// Segundos até o aviso sumir — a barra drena nesse tempo.
     var countdownDuration: TimeInterval = 3
     var result: String?
+    var isProcessing = false
+    var isClosing = false
     var onCopy: (() -> Void)?
 
     static let earWidth: CGFloat = 46
@@ -62,11 +64,12 @@ struct DynamicIslandView: View {
                 .frame(width: rightEarWidth, alignment: .trailing)
         }
         .padding(.horizontal, 12)
-        .opacity(isOpen ? 1 : 0)
-        .frame(width: isOpen ? nil : notchWidth, height: isOpen ? Self.height : 0)
+        .opacity(isShown ? 1 : 0)
+        .frame(width: isShown ? nil : notchWidth, height: isShown ? Self.height : 0)
         .background(.black, in: shape)
         .clipShape(shape)
         .shadow(color: .black.opacity(0.35), radius: 16, y: 8)
+        .animation(.spring(response: 0.3, dampingFraction: 0.84), value: isClosing)
         .onAppear {
             withAnimation(.spring(response: 0.42, dampingFraction: 0.72)) {
                 isOpen = true
@@ -78,7 +81,10 @@ struct DynamicIslandView: View {
     /// o mesmo ponto da tela conta quanto falta pra ilha fechar.
     @ViewBuilder
     private var leftEar: some View {
-        if warning != nil {
+        if isProcessing {
+            CountdownRing(progress: 0.3, tint: .white, spinning: true)
+                .frame(width: 14, height: 14)
+        } else if warning != nil {
             CountdownRing(progress: drain)
                 .frame(width: 15, height: 15)
                 .onAppear {
@@ -122,7 +128,7 @@ struct DynamicIslandView: View {
                                 withAnimation(.linear(duration: countdownDuration)) { drain = 0 }
                             }
                     }
-                    Text(didCopy ? "Copiado" : "Copiar")
+                    Text(didCopy ? t("Copiado", "Copied") : t("Copiar", "Copy"))
                         .font(.system(size: 11, weight: .semibold, design: .rounded))
                 }
                 .foregroundStyle(.black)
@@ -138,10 +144,13 @@ struct DynamicIslandView: View {
         .padding(Self.resultInset)
         .frame(width: Self.resultWidth(notchWidth: notchWidth), alignment: .topLeading)
         .background(.black, in: bubbleShape)
-        .opacity(isOpen ? 1 : 0)
-        .scaleEffect(isOpen ? 1 : 0.94, anchor: .top)
-        .blur(radius: isOpen ? 0 : 6)
+        .opacity(isShown ? 1 : 0)
+        .scaleEffect(isShown ? 1 : 0.94, anchor: .top)
+        .blur(radius: isShown ? 0 : 6)
+        .animation(.spring(response: 0.3, dampingFraction: 0.84), value: isClosing)
     }
+
+    private var isShown: Bool { isOpen && !isClosing }
 
     @ViewBuilder
     private var rightEar: some View {
@@ -201,6 +210,9 @@ private struct CountdownRing: View {
     var progress: CGFloat
     var tint: Color = .yellow
     var track: Color = .white.opacity(0.18)
+    var spinning = false
+
+    @State private var turn = false
 
     var body: some View {
         ZStack {
@@ -210,6 +222,15 @@ private struct CountdownRing: View {
                 .trim(from: 0, to: max(0, min(1, progress)))
                 .stroke(tint, style: StrokeStyle(lineWidth: 2, lineCap: .round))
                 .rotationEffect(.degrees(-90)) // começa no topo
+                .rotationEffect(.degrees(turn ? 360 : 0))
+                .animation(
+                    spinning ? .linear(duration: 0.75).repeatForever(autoreverses: false) : nil,
+                    value: turn
+                )
+        }
+        .onAppear {
+            guard spinning else { return }
+            turn = true
         }
     }
 }

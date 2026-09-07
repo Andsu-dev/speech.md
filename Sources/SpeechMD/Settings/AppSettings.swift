@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import Observation
 
@@ -9,8 +10,22 @@ final class AppSettings {
         didSet { save(hotkey, forKey: Keys.hotkey) }
     }
 
+    var pushToTalkHotkey: HotkeyBinding {
+        didSet { save(pushToTalkHotkey, forKey: Keys.pushToTalkHotkey) }
+    }
+
     var localeIdentifier: String {
-        didSet { defaults.set(localeIdentifier, forKey: Keys.locale) }
+        didSet {
+            defaults.set(localeIdentifier, forKey: Keys.locale)
+            Language.isEnglish = Language.matches(localeIdentifier: localeIdentifier)
+        }
+    }
+
+    var appearance: AppAppearance {
+        didSet {
+            defaults.set(appearance.rawValue, forKey: Keys.appearance)
+            appearance.apply()
+        }
     }
 
     var recognitionMode: RecognitionMode {
@@ -41,7 +56,10 @@ final class AppSettings {
 
     init() {
         hotkey = Self.load(HotkeyBinding.self, forKey: Keys.hotkey) ?? .default
+        pushToTalkHotkey = Self.load(HotkeyBinding.self, forKey: Keys.pushToTalkHotkey) ?? .fn
         localeIdentifier = defaults.string(forKey: Keys.locale) ?? "pt-BR"
+        appearance = defaults.string(forKey: Keys.appearance)
+            .flatMap(AppAppearance.init(rawValue:)) ?? .system
         recognitionMode = defaults.string(forKey: Keys.recognitionMode)
             .flatMap(RecognitionMode.init(rawValue:)) ?? .lowLatency
         captureSystemAudio = defaults.object(forKey: Keys.captureSystemAudio) as? Bool ?? true
@@ -49,6 +67,8 @@ final class AppSettings {
         formatAsMarkdown = defaults.object(forKey: Keys.formatAsMarkdown) as? Bool ?? false
         soundFeedback = defaults.object(forKey: Keys.soundFeedback) as? Bool ?? true
         hapticFeedback = defaults.object(forKey: Keys.hapticFeedback) as? Bool ?? true
+        Language.isEnglish = Language.matches(localeIdentifier: localeIdentifier)
+        appearance.apply()
     }
 
     private func save<T: Encodable>(_ value: T, forKey key: String) {
@@ -63,7 +83,9 @@ final class AppSettings {
 
     private enum Keys {
         static let hotkey = "hotkey"
+        static let pushToTalkHotkey = "pushToTalkHotkey"
         static let locale = "localeIdentifier"
+        static let appearance = "appearance"
         static let recognitionMode = "recognitionMode"
         static let captureSystemAudio = "captureSystemAudio"
         static let showIsland = "showIsland"

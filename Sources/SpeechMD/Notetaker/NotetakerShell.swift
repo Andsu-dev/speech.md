@@ -7,7 +7,8 @@ struct NotetakerShell: View {
     @State private var selection: NavSection = .dictation
     @State private var settings = AppSettings()
     @State private var island = IslandController()
-    @State private var hotkey = GlobalHotkey()
+    @State private var toggleHotkey = GlobalHotkey(id: 1)
+    @State private var pushToTalkHotkey = GlobalHotkey(id: 2)
     @State private var dictation = DictationSession()
     @State private var files = FileTranscriptionModel()
     @State private var snippets = SnippetStore()
@@ -15,13 +16,6 @@ struct NotetakerShell: View {
     @State private var meetings: [Meeting] = []
     @State private var meetingStartedAt: Date?
     @State private var elapsed: TimeInterval = 0
-    @State private var hotkeyPressedAt: Date?
-
-    /// Abaixo disso o atalho conta como toque, não como "segurar".
-    private static let tapThreshold: TimeInterval = 0.4
-
-    private let ticker = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
-
     var body: some View {
         HStack(spacing: 0) {
             SidebarView(selection: $selection, isCollapsed: $isSidebarCollapsed)
@@ -38,23 +32,23 @@ struct NotetakerShell: View {
             }
             .background(Theme.canvas)
         }
+        .id(settings.localeIdentifier)
         .frame(minWidth: 1_060, minHeight: 700)
         .background(Theme.canvas)
-        // paleta do Theme é clara e fixa; sem isto sheets, campos e pickers
-        // herdam o dark do sistema e viram texto escuro sobre fundo escuro
-        .preferredColorScheme(.light)
-        .onAppear { registerHotkey() }
-        .onChange(of: settings.hotkey) { _, _ in registerHotkey() }
-        .onChange(of: dictation.state) { _, state in
-            guard case .failed(let message) = state else { return }
-            island.isSessionActive = false
-            island.flashWarning(String(message.prefix(28)))
-            playFeedback(.warning)
+        .onAppear {
+            registerHotkeys()
+            dictation.onFinish = handleDictationOutcome
+            dictation.onFailure = handleDictationFailure
         }
-        .onChange(of: dictation.undelivered) { _, dictated in
-            guard let dictated else { return }
-            island.showResult(dictated.text)
-            playFeedback(.warning)
+        .onChange(of: settings.hotkey) { _, _ in registerHotkeys() }
+        .onChange(of: settings.pushToTalkHotkey) { _, _ in registerHotkeys() }
+        .onChange(of: HotkeyCapture.shared.isCapturing) { _, isCapturing in
+            if isCapturing {
+                toggleHotkey.unregister()
+                pushToTalkHotkey.unregister()
+            } else {
+                registerHotkeys()
+            }
         }
         .onChange(of: model.phase) { _, phase in
             guard case .failed = phase else { return }
@@ -62,9 +56,12 @@ struct NotetakerShell: View {
             island.isVisible = false
             meetingStartedAt = nil
         }
-        .onReceive(ticker) { _ in
-            guard let meetingStartedAt else { return }
-            elapsed = Date().timeIntervalSince(meetingStartedAt)
+        .task(id: meetingStartedAt) {
+            guard let startedAt = meetingStartedAt else { return }
+            while !Task.isCancelled {
+                elapsed = Date().timeIntervalSince(startedAt)
+                try? await Task.sleep(for: .seconds(1))
+            }
         }
     }
 
@@ -75,6 +72,7 @@ struct NotetakerShell: View {
             DictationView(
                 session: dictation,
                 hotkey: settings.hotkey,
+                pushToTalkHotkey: settings.pushToTalkHotkey,
                 onToggle: toggleDictation
             )
         case .notetaker:
@@ -113,38 +111,55 @@ struct NotetakerShell: View {
         }
     }
 
-    private func registerHotkey() {
-        hotkey.register(
-            settings.hotkey,
-            onPress: { hotkeyPressed() },
-            onRelease: { hotkeyReleased() }
+    private func handleDictationFailure(_ message: String) {
+        island.isSessionActive = false
+        island.isProcessing = false
+        island.flashWarning(String(message.prefix(28)))
+        playFeedback(.warning)
+    }
+
+    private func handleDictationOutcome(_ outcome: DictationOutcome) {
+        island.isProcessing = false
+        if outcome.needsCopy {
+            island.showResult(outcome.text)
+            playFeedback(.warning)
+        } else {
+            island.isVisible = false
+            if !outcome.text.isEmpty {
+                playFeedback(.finish)
+            }
+        }
+    }
+
+    private func registerHotkeys() {
+        if settings.hotkey.isFunctionKey || settings.pushToTalkHotkey.isFunctionKey {
+            GlobeKeyAction.disableIfNeeded()
+        }
+
+        guard !HotkeyCapture.shared.isCapturing else { return }
+
+        if settings.hotkey != settings.pushToTalkHotkey {
+            toggleHotkey.register(
+                settings.hotkey,
+                onPress: { toggleDictation() },
+                onRelease: {}
+            )
+        }
+        pushToTalkHotkey.register(
+            settings.pushToTalkHotkey,
+            onPress: { pushToTalkPressed() },
+            onRelease: { pushToTalkReleased() }
         )
     }
 
-    /// Atalho global = ditado: é o único que precisa funcionar de dentro de
-    /// outro app. Reunião e arquivo são acionados pela própria janela.
-    ///
-    /// Segurar → grava enquanto segura, solta e escreve.
-    /// Toque curto → trava gravando; o toque seguinte encerra e escreve.
-    private func hotkeyPressed() {
-        guard !model.phase.isRunning else { return }
-
-        if dictation.isRunning {
-            finishDictation()
-            return
-        }
-        hotkeyPressedAt = Date()
+    private func pushToTalkPressed() {
+        guard !model.phase.isRunning, !dictation.isRunning else { return }
         startDictation()
     }
 
-    private func hotkeyReleased() {
-        guard dictation.isRunning, let pressedAt = hotkeyPressedAt else { return }
-        if Date().timeIntervalSince(pressedAt) < Self.tapThreshold {
-            dictation.isLatched = true // toque curto: segue ouvindo
-        } else {
-            finishDictation()
-        }
-        hotkeyPressedAt = nil
+    private func pushToTalkReleased() {
+        guard dictation.isRunning else { return }
+        finishDictation()
     }
 
     private func toggleDictation() {
@@ -165,15 +180,10 @@ struct NotetakerShell: View {
     }
 
     private func finishDictation() {
-        let hadTarget = dictation.hasEditableTarget
-        let spoke = !dictation.liveText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         dictation.finish()
         island.isSessionActive = false
         island.warning = nil
-        island.isVisible = false
-        if spoke, hadTarget {
-            playFeedback(.finish)
-        }
+        island.isProcessing = true
     }
 
     private func playFeedback(_ kind: Feedback.Kind) {
@@ -218,7 +228,10 @@ struct NotetakerShell: View {
         let excerpt = [you, others].first { !$0.isEmpty } ?? ""
         meetings.insert(
             Meeting(
-                title: "Reunião de \(Meeting.titleFormatter.string(from: startedAt))",
+                title: t(
+                    "Reunião de \(Meeting.titleFormatter.string(from: startedAt))",
+                    "Meeting at \(Meeting.titleFormatter.string(from: startedAt))"
+                ),
                 startedAt: startedAt,
                 duration: duration,
                 participants: others.isEmpty ? 1 : 2,

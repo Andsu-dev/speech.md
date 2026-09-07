@@ -9,6 +9,16 @@ enum NavSection: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
+    var title: String {
+        switch self {
+        case .dictation: t("Falar", "Speak")
+        case .notetaker: t("Reuniões", "Meetings")
+        case .files: t("Arquivos", "Files")
+        case .dictionary: t("Dicionário", "Dictionary")
+        case .settings: t("Configurações", "Settings")
+        }
+    }
+
     /// Configurações mora no rodapé da sidebar, junto dos links.
     static var primary: [NavSection] {
         allCases.filter { $0 != .settings }
@@ -85,15 +95,15 @@ struct MeetingDay: Identifiable {
     }
 
     private static func label(for day: Date, calendar: Calendar) -> String {
-        if calendar.isDateInToday(day) { return "Hoje" }
-        if calendar.isDateInYesterday(day) { return "Ontem" }
+        if calendar.isDateInToday(day) { return t("Hoje", "Today") }
+        if calendar.isDateInYesterday(day) { return t("Ontem", "Yesterday") }
         return dayFormatter.string(from: day)
     }
 
     private static let dayFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "pt_BR")
-        formatter.dateFormat = "d 'de' MMMM"
+        formatter.dateFormat = t("d 'de' MMMM", "MMMM d")
         return formatter
     }()
 }

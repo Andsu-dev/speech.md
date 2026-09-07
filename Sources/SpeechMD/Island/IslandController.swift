@@ -6,7 +6,7 @@ final class IslandController {
     var isVisible = false {
         didSet {
             guard isVisible != oldValue else { return }
-            if isVisible { startTicker() } else { stopTicker() }
+            if isVisible, result == nil { startTicker() } else { stopTicker() }
             render()
         }
     }
@@ -22,8 +22,23 @@ final class IslandController {
     var result: String? {
         didSet {
             guard result != oldValue else { return }
+            if result != nil { stopTicker() }
             render()
             scheduleResultDismissal()
+        }
+    }
+
+    var isProcessing = false {
+        didSet {
+            guard isProcessing != oldValue else { return }
+            render()
+        }
+    }
+
+    private var isClosing = false {
+        didSet {
+            guard isClosing != oldValue else { return }
+            render()
         }
     }
 
@@ -68,6 +83,7 @@ final class IslandController {
 
     func showResult(_ text: String) {
         warning = nil
+        isClosing = false
         result = text
         isVisible = true
     }
@@ -85,14 +101,25 @@ final class IslandController {
 
     private func dismissResult() {
         resultDismissal?.cancel()
-        result = nil
-        if !isSessionActive {
-            isVisible = false
+        isClosing = true
+        resultDismissal = Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(280))
+            guard !Task.isCancelled, let self else { return }
+            result = nil
+            isClosing = false
+            if !isSessionActive {
+                isVisible = false
+            }
         }
     }
 
     /// Ligado por quem controla a sessão; enquanto true a ilha permanece.
-    var isSessionActive = false
+    var isSessionActive = false {
+        didSet {
+            guard isSessionActive != oldValue else { return }
+            if !isSessionActive { stopTicker() }
+        }
+    }
 
     private func startTicker() {
         elapsed = 0
@@ -128,6 +155,8 @@ final class IslandController {
                 (result == nil ? Self.warningDuration : Self.resultDuration).components.seconds
             ),
             result: result,
+            isProcessing: isProcessing,
+            isClosing: isClosing,
             onCopy: { [weak self] in
                 guard let self, let text = result else { return }
                 NSPasteboard.general.clearContents()

@@ -8,6 +8,11 @@ struct Dictation: Identifiable, Equatable {
     let createdAt: Date
 }
 
+struct DictationOutcome {
+    let text: String
+    let needsCopy: Bool
+}
+
 /// Ditado estilo Wispr Flow: fala em qualquer app, o texto é colado lá.
 @MainActor
 @Observable
@@ -30,21 +35,17 @@ final class DictationSession {
     func clearHistory() {
         history.removeAll()
     }
-    /// Ditado iniciado por toque curto no atalho fica "travado" ouvindo até o
-    /// próximo toque; iniciado segurando, termina quando a tecla é solta.
-    var isLatched = false
-
     var isRunning: Bool {
         state == .listening || state == .starting
     }
 
     enum TargetIssue: Equatable {
         case missingPermission
-        case noTextField
+        case noTarget
 
-        static func current() -> TargetIssue? {
+        static func current(target: NSRunningApplication?) -> TargetIssue? {
             if !TextInserter.isTrusted { return .missingPermission }
-            if !TextInserter.focusedElementAcceptsText() { return .noTextField }
+            if target == nil { return .noTarget }
             return nil
         }
     }
@@ -54,7 +55,11 @@ final class DictationSession {
 
     var hasEditableTarget: Bool { targetIssue == nil }
 
-    private(set) var undelivered: Dictation?
+    /// Entregue direto por callback, não por `onChange` no SwiftUI: com a
+    /// janela ocluída o body para de ser avaliado e a ilha ficava girando pra
+    /// sempre mesmo com o texto já colado.
+    var onFinish: ((DictationOutcome) -> Void)?
+    var onFailure: ((String) -> Void)?
 
     private var pipeline: SpeechPipeline?
     private var startTask: Task<Void, Never>?
@@ -73,7 +78,7 @@ final class DictationSession {
         targetApp = frontmost?.bundleIdentifier == Bundle.main.bundleIdentifier ? nil : frontmost
         self.expand = expand
         self.formatAsMarkdown = formatAsMarkdown
-        targetIssue = TargetIssue.current()
+        targetIssue = TargetIssue.current(target: targetApp)
 
         state = .starting
         liveText = ""
@@ -90,6 +95,7 @@ final class DictationSession {
             } catch {
                 state = .failed(error.localizedDescription)
                 pipeline = nil
+                onFailure?(error.localizedDescription)
             }
         }
     }
@@ -98,7 +104,6 @@ final class DictationSession {
     func finish() {
         startTask?.cancel()
         startTask = nil
-        isLatched = false
 
         let currentPipeline = pipeline
         let target = targetApp
@@ -113,19 +118,22 @@ final class DictationSession {
 
             let raw = liveText.trimmingCharacters(in: .whitespacesAndNewlines)
             liveText = ""
-            guard !raw.isEmpty else { return }
+            guard !raw.isEmpty else {
+                onFinish?(DictationOutcome(text: "", needsCopy: false))
+                return
+            }
 
             var text = expand(raw)
             if formatAsMarkdown {
                 text = await TranscriptFormatter.format(text)
             }
-            let dictation = Dictation(text: text, createdAt: Date())
-            history.insert(dictation, at: 0)
+            history.insert(Dictation(text: text, createdAt: Date()), at: 0)
             guard hasEditableTarget else {
-                undelivered = dictation
+                onFinish?(DictationOutcome(text: text, needsCopy: true))
                 return
             }
             await TextInserter.insert(text, into: target)
+            onFinish?(DictationOutcome(text: text, needsCopy: false))
         }
     }
 }

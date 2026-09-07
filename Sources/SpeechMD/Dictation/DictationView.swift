@@ -3,6 +3,7 @@ import SwiftUI
 struct DictationView: View {
     let session: DictationSession
     let hotkey: HotkeyBinding
+    let pushToTalkHotkey: HotkeyBinding
     let onToggle: () -> Void
 
     @State private var needsPermission = !TextInserter.isTrusted
@@ -25,13 +26,14 @@ struct DictationView: View {
                 } else {
                     VStack(alignment: .leading, spacing: 10) {
                         HStack {
-                            Text("HISTÓRICO")
+                            Text(t("HISTÓRICO", "HISTORY"))
                                 .font(.system(size: 11, weight: .semibold))
                                 .foregroundStyle(Theme.textTertiary)
                                 .tracking(0.6)
                             Spacer()
-                            Button("Limpar tudo") { session.clearHistory() }
+                            Button(t("Limpar tudo", "Clear all")) { session.clearHistory() }
                                 .controlSize(.small)
+                                .pointerStyle(.link)
                         }
 
                         VStack(spacing: 0) {
@@ -68,18 +70,18 @@ struct DictationView: View {
                 Text(headerTitle)
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(.white)
-                Text("Segure o atalho e fale — ao soltar, o texto é colado no app em foco. Um toque curto mantém ouvindo até o toque seguinte.")
+                Text(instructions)
                     .font(.system(size: 12))
                     .foregroundStyle(.white.opacity(0.7))
                     .fixedSize(horizontal: false, vertical: true)
             }
             Spacer(minLength: 12)
 
-            Text(hotkey.displayString)
+            Text(pushToTalkHotkey.displayString)
                 .font(.system(size: 12, weight: .medium, design: .rounded))
                 .foregroundStyle(.white.opacity(0.75))
-                .padding(.horizontal, 9)
-                .padding(.vertical, 5)
+                .padding(.horizontal, 11)
+                .frame(height: 34)
                 .overlay {
                     RoundedRectangle(cornerRadius: 7, style: .continuous)
                         .stroke(.white.opacity(0.25), lineWidth: 1)
@@ -89,12 +91,12 @@ struct DictationView: View {
                 HStack(spacing: 7) {
                     Image(systemName: session.isRunning ? "stop.fill" : "mic.fill")
                         .font(.system(size: 12, weight: .semibold))
-                    Text(session.isRunning ? "Parar" : "Falar")
+                    Text(session.isRunning ? t("Parar", "Stop") : t("Falar", "Speak"))
                         .font(.system(size: 13, weight: .semibold))
                 }
-                .foregroundStyle(Theme.textPrimary)
+                .foregroundStyle(Theme.contrastSurface)
                 .padding(.horizontal, 16)
-                .padding(.vertical, 9)
+                .frame(height: 34)
                 .background(.white, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
             }
             .buttonStyle(.plain)
@@ -102,24 +104,24 @@ struct DictationView: View {
         }
         .padding(.horizontal, 22)
         .padding(.vertical, 18)
-        .background(Theme.textPrimary, in: RoundedRectangle(cornerRadius: Theme.cardRadius, style: .continuous))
+        .background(Theme.contrastSurface, in: RoundedRectangle(cornerRadius: Theme.cardRadius, style: .continuous))
     }
 
     private var headerTitle: String {
-        guard session.isRunning else { return "Escrever falando" }
-        return session.isLatched ? "Ouvindo (travado)" : "Ouvindo…"
+        guard session.isRunning else { return t("Escrever falando", "Write by speaking") }
+        return t("Ouvindo…", "Listening…")
     }
 
     private var liveCard: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 7) {
                 Circle().fill(Theme.live).frame(width: 6, height: 6)
-                Text("Transcrevendo")
+                Text(t("Transcrevendo", "Transcribing"))
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(Theme.live)
                     .tracking(0.4)
             }
-            Text(session.liveText.isEmpty ? "Fale algo…" : session.liveText)
+            Text(session.liveText.isEmpty ? t("Fale algo…", "Say something…") : session.liveText)
                 .font(.system(size: 14))
                 .foregroundStyle(session.liveText.isEmpty ? Theme.textTertiary : Theme.textPrimary)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -133,16 +135,23 @@ struct DictationView: View {
         }
     }
 
+    private var instructions: String {
+        t(
+            "Segure \(pushToTalkHotkey.displayString) e fale, ao soltar o texto é colado no app em foco. \(hotkey.displayString) começa e encerra a gravação num toque.",
+            "Hold \(pushToTalkHotkey.displayString) and speak, on release the text is pasted into the focused app. \(hotkey.displayString) starts and stops the recording on a tap."
+        )
+    }
+
     private var permissionCard: some View {
         HStack(spacing: 14) {
             Image(systemName: "lock.shield")
                 .font(.system(size: 18))
                 .foregroundStyle(Theme.highlight)
             VStack(alignment: .leading, spacing: 3) {
-                Text("Falta permissão de Acessibilidade")
+                Text(t("Falta permissão de Acessibilidade", "Accessibility permission missing"))
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(Theme.textPrimary)
-                Text("Sem ela o texto é transcrito mas não consegue ser colado no app em foco.")
+                Text(t("Sem ela o texto é transcrito mas não consegue ser colado no app em foco.", "Without it the text is transcribed but cannot be pasted into the focused app."))
                     .font(.system(size: 12))
                     .foregroundStyle(Theme.textSecondary)
             }
@@ -150,12 +159,12 @@ struct DictationView: View {
             Button {
                 SystemPermission.accessibility.requestIfPossible()
             } label: {
-                Text("Permitir")
+                Text(t("Permitir", "Allow"))
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(.white)
                     .padding(.horizontal, 14)
                     .padding(.vertical, 7)
-                    .background(Theme.textPrimary, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    .background(Theme.contrastSurface, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
             }
             .buttonStyle(.plain)
             .pointerStyle(.link)
@@ -173,10 +182,10 @@ struct DictationView: View {
             Image(systemName: "text.cursor")
                 .font(.system(size: 26, weight: .light))
                 .foregroundStyle(Theme.textTertiary)
-            Text("Nada transcrito ainda")
+            Text(t("Nada transcrito ainda", "Nothing transcribed yet"))
                 .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(Theme.textPrimary)
-            Text("Clique em Falar ou use \(hotkey.displayString) de qualquer app.")
+            Text(t("Clique em Falar ou use \(pushToTalkHotkey.displayString) de qualquer app.", "Click Speak or press \(pushToTalkHotkey.displayString) from any app."))
                 .font(.system(size: 13))
                 .foregroundStyle(Theme.textSecondary)
         }

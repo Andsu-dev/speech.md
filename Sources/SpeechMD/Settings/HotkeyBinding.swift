@@ -9,12 +9,19 @@ struct HotkeyBinding: Equatable, Codable {
     /// ⌥⌘R. Space com ⌘ é da busca do sistema e nunca chegaria ao app.
     static let `default` = HotkeyBinding(keyCode: 15, modifiers: NSEvent.ModifierFlags([.option, .command]).rawValue)
 
+    static let fnKeyCode: UInt32 = 63
+
+    static let fn = HotkeyBinding(keyCode: fnKeyCode, modifiers: 0)
+
+    var isFunctionKey: Bool { keyCode == Self.fnKeyCode }
+
     var modifierFlags: NSEvent.ModifierFlags {
         NSEvent.ModifierFlags(rawValue: modifiers)
     }
 
     /// "⌥⌘Space" — ordem igual à dos menus do sistema.
     var displayString: String {
+        if isFunctionKey { return "fn" }
         var result = ""
         if modifierFlags.contains(.control) { result += "⌃" }
         if modifierFlags.contains(.option) { result += "⌥" }
@@ -24,7 +31,8 @@ struct HotkeyBinding: Equatable, Codable {
     }
 
     var isValid: Bool {
-        !modifierFlags.intersection([.control, .option, .shift, .command]).isEmpty
+        if isFunctionKey { return true }
+        return !modifierFlags.intersection([.control, .option, .shift, .command]).isEmpty
     }
 
     private static func keyName(for keyCode: UInt32) -> String {
