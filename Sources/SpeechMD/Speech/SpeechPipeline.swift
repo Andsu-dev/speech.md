@@ -1,4 +1,5 @@
 import AVFoundation
+import AudioToolbox
 import CoreMedia
 import Foundation
 import Speech
@@ -68,6 +69,8 @@ actor SpeechPipeline {
 
     private let requestedLocale: Locale
     private let mode: RecognitionMode
+    private let inputDeviceUID: String?
+    private let contextualTerms: [String]
     private var analyzer: SpeechAnalyzer?
     private var resultTask: Task<Void, Never>?
     private var audioEngine: AVAudioEngine?
@@ -78,9 +81,42 @@ actor SpeechPipeline {
     private var volatileSegment = ""
     private var resetClockOnNextAudio = false
 
-    init(localeIdentifier: String, mode: RecognitionMode) {
+    init(
+        localeIdentifier: String,
+        mode: RecognitionMode,
+        inputDeviceUID: String? = nil,
+        contextualTerms: [String] = SpokenTerms.all()
+    ) {
         requestedLocale = Locale(identifier: localeIdentifier)
         self.mode = mode
+        self.inputDeviceUID = inputDeviceUID
+        self.contextualTerms = contextualTerms
+    }
+
+    /// Pista de vocabulário para o reconhecedor: os estrangeirismos saem
+    /// escritos certo já na transcrição, sem custar nada depois.
+    private func analysisContext() -> AnalysisContext {
+        let context = AnalysisContext()
+        context.contextualStrings = [.general: contextualTerms]
+        return context
+    }
+
+    /// Aponta o engine para o microfone escolhido nos ajustes. Sem escolha, ou
+    /// com o dispositivo desconectado, fica o padrão do sistema.
+    private func selectInputDevice(on input: AVAudioInputNode) {
+        guard let inputDeviceUID,
+              let audioUnit = input.audioUnit,
+              var deviceID = AudioInputDevice.coreAudioID(for: inputDeviceUID)
+        else { return }
+
+        AudioUnitSetProperty(
+            audioUnit,
+            kAudioOutputUnitProperty_CurrentDevice,
+            kAudioUnitScope_Global,
+            0,
+            &deviceID,
+            UInt32(MemoryLayout<AudioDeviceID>.size)
+        )
     }
 
     func startMicrophone(onEvent: @escaping EventHandler) async throws {
@@ -92,6 +128,9 @@ actor SpeechPipeline {
 
         let engine = AVAudioEngine()
         let input = engine.inputNode
+        // Antes de ler o formato: trocar o dispositivo depois disso deixaria o
+        // tap com a taxa de amostragem do microfone antigo.
+        selectInputDevice(on: input)
         let inputFormat = input.outputFormat(forBus: 0)
         guard inputFormat.channelCount > 0 else {
             throw SpeechPipelineError.noMicrophone
@@ -227,6 +266,7 @@ actor SpeechPipeline {
             )
             try await ensureAssets(for: [transcriber])
             let analyzer = SpeechAnalyzer(modules: [transcriber], options: options)
+            try await analyzer.setContext(analysisContext())
             return .dictation(analyzer, transcriber)
 
         case .quality:
@@ -244,6 +284,7 @@ actor SpeechPipeline {
             )
             try await ensureAssets(for: [transcriber])
             let analyzer = SpeechAnalyzer(modules: [transcriber], options: options)
+            try await analyzer.setContext(analysisContext())
             return .speech(analyzer, transcriber)
         }
     }
