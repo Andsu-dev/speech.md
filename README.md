@@ -48,14 +48,12 @@ targets for sustained use — first partial under 300 ms, sustained lag under
 ## Install
 
 ```sh
-brew tap Andsu-dev/tap
-brew trust andsu-dev/tap
-brew install --cask --no-quarantine speech-md
+brew install Andsu-dev/tap/speech-md
 ```
 
-`--no-quarantine` matters: the app is signed with a local certificate, not
-notarized by Apple, so Gatekeeper would otherwise ask you to right-click and
-Open on the first launch.
+The app is signed with a local certificate, not notarized by Apple. The cask
+clears the Gatekeeper quarantine flag on install, so it opens on the first
+click.
 
 Runs on Apple Silicon, macOS 26 or later.
 
