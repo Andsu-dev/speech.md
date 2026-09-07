@@ -1,16 +1,43 @@
-# speech.md
+<div align="center">
 
-Voice transcription for macOS that runs entirely on your device. No server, no
-account, no audio leaving your Mac.
+<img src="docs/icon.png" alt="speech.md" width="180">
+
+<p>
+  <img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT">
+  <img src="https://img.shields.io/badge/platform-macOS%2026%2B-lightgrey?logo=apple" alt="macOS 26+">
+  <img src="https://img.shields.io/badge/on--device-100%25-success" alt="100% on-device">
+  <a href="https://appconty.com"><img src="https://img.shields.io/badge/Visit-appconty.com-2984F6" alt="Visit appconty.com"></a>
+</p>
+
+<p>
+  <a href="https://x.com/andersonbrdev"><img src="https://img.shields.io/badge/FOLLOW%20ON%20X-000000?logo=x&logoColor=white" alt="Follow on X"></a>
+  <a href="https://appconty.com"><img src="https://img.shields.io/badge/POWERED%20BY%20CONTY-2984F6?logoColor=white" alt="Powered by Conty"></a>
+</p>
+
+</div>
+
+---
+
+# 🎙️ speech.md
+
+**Voice transcription for macOS that runs entirely on your device.** No server, no
+account, no audio leaving your Mac. Transcribes at **75x real time**, and foreign
+terms come out spelled right at **zero latency cost**.
 
 Built on `SpeechAnalyzer` and `SpeechTranscriber` (Apple Speech), with
-`ScreenCaptureKit` to capture what the other people in a call are saying.
+`ScreenCaptureKit` to capture what the other people in a call are saying, and
+Foundation Models for the optional refinement passes.
+
+*Pst. Free, and it stays free :)*
+
+<a href="https://github.com/Andsu-dev/speech.md"><img src="https://img.shields.io/github/stars/Andsu-dev/speech.md?style=social" alt="Star"></a>
 
 ## What it does
 
-**Dictate** — a global hotkey in any app: hold it, speak, release, and the text
-is pasted wherever your cursor is. A short tap keeps it listening until the
-next tap.
+**Dictate** — one key, in any app. Hold it, speak, release, and the text is
+pasted wherever your cursor is. Two quick taps keep it recording until the next
+tap. Recording starts on the press either way, so nothing of the first word is
+lost while the gesture is still being decided.
 
 **Meetings** — records a meeting on two separate channels, your microphone and
 the system audio, each with its own analyzer. Both transcripts stream in live,
@@ -38,17 +65,26 @@ punctuation.
 
 ## Performance
 
-Measured on an Apple M5, macOS 26.5, `pt-BR` locale, low-latency mode. 27.7s of
-audio generated with `say`, three runs.
+Measured on an Apple M5, macOS 26.6, `pt-BR` locale. Transcription in
+low-latency mode, 27.7s of audio generated with `say`, three runs; model passes
+against the real on-device model.
 
 | Measure | Result |
 | --- | ---: |
 | File transcription | **75× real time** (27.7s of audio in 0.37s) |
-| Markdown formatting, 14 words | 0.62s (0.43–0.93) |
-| Markdown formatting, 56 words | 1.02s (0.90–1.12) |
-| Vocabulary hint to the recognizer | 0s (runs inside transcription) |
-| Optional term pass, 1 word | 0.28s |
-| Optional term pass, 2 words | 0.98s |
+| Vocabulary hint to the recognizer | **0s** (runs inside transcription) |
+| Foreign-term pass, 1 word | 0.28s |
+| Foreign-term pass, 2 words | 0.89s |
+| Markdown, 14 words, model cold | 2.52s |
+| Markdown, 14 words, prewarmed | 2.07s |
+| Memory, app idle | 42 MB |
+
+Both model passes are optional and off by default. The vocabulary hint is not:
+it costs nothing, so "briefing", "deadline" and "function" come out spelled
+right without any pass at all.
+
+Every session prewarms the model when recording starts — the first response
+carries the model load, and the seconds you spend speaking pay for it.
 
 Formatting only runs when enabled, and it runs *after* transcription — it adds
 latency between releasing the hotkey and the text appearing, not while you
@@ -153,6 +189,13 @@ Personal project, work in progress. Meetings and dictations live in memory —
 closing the app discards them. Persistence is next.
 
 The interface is in Brazilian Portuguese.
+
+## Powered by Conty
+
+<a href="https://appconty.com"><img src="https://img.shields.io/badge/appconty.com-2984F6?logoColor=white" alt="Conty"></a>
+
+Save time, build faster, and find the right people to promote what you built.
+Build. Ship. Promote. All with [Conty](https://appconty.com).
 
 ## License
 
