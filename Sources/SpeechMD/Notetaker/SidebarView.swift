@@ -12,8 +12,8 @@ struct SidebarView: View {
         VStack(alignment: .leading, spacing: 0) {
             brand
                 .padding(.horizontal, isCollapsed ? 0 : 20)
-                .padding(.top, 18)
-                .padding(.bottom, 22)
+                .padding(.top, isCollapsed ? 52 : 18)
+                .padding(.bottom, isCollapsed ? 8 : 22)
                 .frame(maxWidth: .infinity, alignment: isCollapsed ? .center : .leading)
 
             VStack(spacing: 2) {
@@ -49,7 +49,7 @@ struct SidebarView: View {
         .background(Theme.sidebarBackground)
         .overlay(alignment: .topTrailing) {
             collapseToggle
-                .padding(.top, 16)
+                .padding(.top, isCollapsed ? 48 : 16)
                 .padding(.trailing, isCollapsed ? 0 : 10)
                 .frame(maxWidth: isCollapsed ? .infinity : nil, alignment: isCollapsed ? .center : .trailing)
         }
