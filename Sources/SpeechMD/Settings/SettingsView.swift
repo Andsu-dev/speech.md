@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 struct SettingsView: View {
@@ -39,13 +40,10 @@ struct SettingsView: View {
                         title: t("Tema", "Theme"),
                         subtitle: t("Sistema acompanha o ajuste do macOS.", "System follows the macOS setting.")
                     ) {
-                        Picker("", selection: $settings.appearance) {
-                            ForEach(AppAppearance.allCases) { appearance in
-                                Text(appearance.label).tag(appearance)
-                            }
-                        }
-                        .labelsHidden()
-                        .frame(maxWidth: .infinity)
+                        SettingsPicker(
+                            selection: $settings.appearance,
+                            options: AppAppearance.allCases.map { ($0, $0.label) }
+                        )
                     }
                 }
 
@@ -54,13 +52,14 @@ struct SettingsView: View {
                         title: t("Idioma da fala", "Spoken language"),
                         subtitle: t("O idioma que você fala. Não traduz: falar português com inglês selecionado sai embaralhado. O modelo é baixado sob demanda e roda no dispositivo.", "The language you speak. It does not translate: speaking Portuguese with English selected comes out scrambled. The model downloads on demand and runs on device.")
                     ) {
-                        Picker("", selection: $settings.localeIdentifier) {
-                            Text("Português (BR)").tag("pt-BR")
-                            Text("English (US)").tag("en-US")
-                            Text("Español").tag("es-ES")
-                        }
-                        .labelsHidden()
-                        .frame(maxWidth: .infinity)
+                        SettingsPicker(
+                            selection: $settings.localeIdentifier,
+                            options: [
+                                ("pt-BR", "Português (BR)"),
+                                ("en-US", "English (US)"),
+                                ("es-ES", "Español")
+                            ]
+                        )
                     }
 
                     Divider().overlay(Theme.border)
@@ -69,14 +68,11 @@ struct SettingsView: View {
                         title: t("Microfone", "Microphone"),
                         subtitle: t("Vale para o ditado e para a sua trilha nas reuniões. Se o aparelho escolhido estiver desconectado, o padrão do sistema assume.", "Applies to dictation and to your track in meetings. If the chosen device is disconnected, the system default takes over.")
                     ) {
-                        Picker("", selection: $settings.inputDeviceUID) {
-                            Text(t("Padrão do sistema", "System default")).tag("")
-                            ForEach(inputDevices) { device in
-                                Text(device.name).tag(device.id)
-                            }
-                        }
-                        .labelsHidden()
-                        .frame(maxWidth: .infinity)
+                        SettingsPicker(
+                            selection: $settings.inputDeviceUID,
+                            options: [("", t("Padrão do sistema", "System default"))]
+                                + inputDevices.map { ($0.id, $0.name) }
+                        )
                     }
 
                     Divider().overlay(Theme.border)
@@ -85,13 +81,10 @@ struct SettingsView: View {
                         title: t("Modo", "Mode"),
                         subtitle: t("Latência menor ou transcrição mais precisa.", "Lower latency or more accurate transcription.")
                     ) {
-                        Picker("", selection: $settings.recognitionMode) {
-                            ForEach(RecognitionMode.allCases) { mode in
-                                Text(mode.label).tag(mode)
-                            }
-                        }
-                        .labelsHidden()
-                        .frame(maxWidth: .infinity)
+                        SettingsPicker(
+                            selection: $settings.recognitionMode,
+                            options: RecognitionMode.allCases.map { ($0, $0.label) }
+                        )
                     }
                 }
 
@@ -259,6 +252,119 @@ private struct SettingsGroup<Content: View>: View {
     }
 }
 
+/// `Picker` e `Menu` no macOS são controle AppKit por baixo: ignoram o
+/// `.frame` e ficam do tamanho da opção mais longa, e o label virava só um
+/// título — o fundo desenhado sumia. Então o botão é SwiftUI (largura, cor e
+/// animação nossas) e a lista continua sendo um `NSMenu` de verdade, com
+/// teclado e marca de selecionado de graça.
+private struct SettingsPicker<Value: Hashable>: View {
+    @Binding var selection: Value
+    let options: [(value: Value, label: String)]
+
+    @State private var isHovering = false
+    @State private var isOpen = false
+    @State private var anchor = MenuAnchorView()
+
+    private var currentLabel: String {
+        options.first { $0.value == selection }?.label ?? ""
+    }
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Text(currentLabel)
+                .foregroundStyle(Theme.textPrimary)
+                .lineLimit(1)
+                .truncationMode(.tail)
+                .contentTransition(.opacity)
+            Spacer(minLength: 4)
+            Image(systemName: "chevron.down")
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundStyle(isHovering || isOpen ? Theme.textPrimary : Theme.textTertiary)
+                .rotationEffect(.degrees(isOpen ? 180 : 0))
+        }
+        .padding(.horizontal, 10)
+        .frame(width: Theme.controlWidth, height: 28)
+        .background {
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(Theme.surfaceHover)
+                .brightness(isHovering && !isOpen ? 0.035 : 0)
+                .shadow(color: .black.opacity(isOpen ? 0.22 : 0), radius: 6, y: 2)
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .strokeBorder(isOpen ? Theme.accent : Theme.border, lineWidth: 1)
+        }
+        .scaleEffect(isOpen ? 0.985 : 1)
+        .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .pointerStyle(.link)
+        .onHover { isHovering = $0 }
+        .onTapGesture { present() }
+        .animation(.spring(response: 0.25, dampingFraction: 0.8), value: isHovering)
+        .animation(.spring(response: 0.28, dampingFraction: 0.78), value: isOpen)
+        .animation(.snappy(duration: 0.2), value: currentLabel)
+        .background { MenuAnchor(view: anchor) }
+    }
+
+    private func present() {
+        let target = MenuTarget { index in selection = options[index].value }
+        let menu = NSMenu()
+        // Sem isso o AppKit pergunta pro target se cada item vale e, como
+        // MenuTarget não responde, desenha tudo cinza e desabilitado.
+        menu.autoenablesItems = false
+        for (index, option) in options.enumerated() {
+            let item = NSMenuItem(
+                title: option.label,
+                action: #selector(MenuTarget.pick(_:)),
+                keyEquivalent: ""
+            )
+            item.target = target
+            item.tag = index
+            item.state = option.value == selection ? .on : .off
+            menu.addItem(item)
+        }
+
+        // `popUp` trava a runloop até fechar, então o estado aberto precisa
+        // ser pintado antes — daí abrir no turno seguinte.
+        isOpen = true
+        DispatchQueue.main.async {
+            // Ancorado na própria view do botão: o menu abre encostado nele
+            // sem conta de coordenada nenhuma. NSView conta de baixo pra
+            // cima, então 4pt abaixo da base é y negativo.
+            // `NSMenuItem.target` é weak: sem segurar o MenuTarget aqui ele
+            // morre no fim de present() e a escolha não chega em ninguém.
+            withExtendedLifetime(target) {
+                menu.popUp(positioning: nil, at: NSPoint(x: 0, y: -4), in: anchor)
+            }
+            isOpen = false
+        }
+    }
+}
+
+/// View invisível só pra dar um ponto de ancoragem AppKit ao menu. Não pega
+/// clique nenhum: quem trata o toque é o SwiftUI por cima.
+private final class MenuAnchorView: NSView {
+    override func hitTest(_ point: NSPoint) -> NSView? { nil }
+}
+
+private struct MenuAnchor: NSViewRepresentable {
+    let view: NSView
+
+    func makeNSView(context: Context) -> NSView { view }
+    func updateNSView(_ nsView: NSView, context: Context) {}
+}
+
+private final class MenuTarget: NSObject {
+    private let handler: (Int) -> Void
+
+    init(handler: @escaping (Int) -> Void) {
+        self.handler = handler
+    }
+
+    @objc func pick(_ sender: NSMenuItem) {
+        handler(sender.tag)
+    }
+}
+
 private struct SettingsRow<Control: View>: View {
     let title: String
     let subtitle: String
@@ -283,7 +389,7 @@ private struct SettingsRow<Control: View>: View {
             }
             Spacer(minLength: 12)
             control
-                .frame(width: 180, alignment: .trailing)
+                .frame(width: Theme.controlWidth, alignment: .trailing)
         }
         .padding(.horizontal, 18)
         .padding(.vertical, 15)

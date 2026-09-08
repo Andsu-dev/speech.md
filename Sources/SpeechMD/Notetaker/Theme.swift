@@ -20,6 +20,9 @@ enum Theme {
     /// Fundo dos cards pretos, com `.white` por cima nos dois temas.
     static let contrastSurface = color(light: (0.11, 0.10, 0.09), dark: (0.17, 0.17, 0.16))
 
+    /// Largura fixa da coluna de controle nos ajustes: selects do mesmo tamanho.
+    static let controlWidth: CGFloat = 180
+
     static let cornerRadius: CGFloat = 12
     static let cardRadius: CGFloat = 16
 
