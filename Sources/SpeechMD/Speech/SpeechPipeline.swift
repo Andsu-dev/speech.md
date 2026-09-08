@@ -71,6 +71,11 @@ actor SpeechPipeline {
     private let mode: RecognitionMode
     private let inputDeviceUID: String?
     private let contextualTerms: [String]
+    /// Blocos de leitura de arquivo. Grande o bastante para o custo por bloco
+    /// sumir, pequeno o bastante para o analyzer começar enquanto o resto do
+    /// arquivo ainda está sendo lido.
+    private static let fileReadChunk: AVAudioFrameCount = 8192
+
     private var analyzer: SpeechAnalyzer?
     private var resultTask: Task<Void, Never>?
     private var audioEngine: AVAudioEngine?
@@ -208,18 +213,30 @@ actor SpeechPipeline {
         onEvent: @escaping EventHandler
     ) async throws -> BenchmarkResult {
         let file = try AVAudioFile(forReading: url)
-        let duration = Double(file.length) / file.processingFormat.sampleRate
+        let fileFormat = file.processingFormat
+        let duration = Double(file.length) / fileFormat.sampleRate
         let prepared = try await preparePipeline()
         let analyzer = prepared.analyzer
 
+        guard let analyzerFormat = await SpeechAnalyzer.bestAvailableAudioFormat(
+            compatibleWith: prepared.modules,
+            considering: fileFormat
+        ), let converter = AVAudioConverter(from: fileFormat, to: analyzerFormat) else {
+            throw SpeechPipelineError.unavailable
+        }
+
+        let (inputSequence, inputBuilder) = AsyncStream.makeStream(of: AnalyzerInput.self)
+
         self.analyzer = analyzer
         startConsumingResults(from: prepared, onEvent: onEvent)
-        try await analyzer.prepareToAnalyze(in: file.processingFormat)
+        try await analyzer.prepareToAnalyze(in: analyzerFormat)
 
         let clock = ContinuousClock()
         let start = clock.now
         resetRunState(at: start)
-        try await analyzer.start(inputAudioFile: file, finishAfterFile: true)
+        try await analyzer.start(inputSequence: inputSequence)
+        await feed(file, through: converter, as: analyzerFormat, into: inputBuilder)
+        inputBuilder.finish()
         try await analyzer.finalizeAndFinishThroughEndOfInput()
         let elapsed = start.duration(to: clock.now).seconds
         await resultTask?.value
@@ -228,6 +245,67 @@ actor SpeechPipeline {
             audioDurationSeconds: duration,
             processingSeconds: elapsed
         )
+    }
+
+    /// Lê o arquivo em blocos e entrega ao analyzer, tratando erro de leitura
+    /// como fim do áudio em vez de deixá-lo derrubar a transcrição inteira.
+    ///
+    /// O Opus que o WhatsApp grava declara no último page um granule position
+    /// maior do que os pacotes contêm: `AVAudioFile.length` promete alguns
+    /// frames a mais do que o decodificador entrega, e o `read` final estoura.
+    /// `ExtAudioFile` tolera a mesma cauda — o arquivo toca em qualquer player —
+    /// e 40 ms tortos no fim não podem custar os 100 s já transcritos.
+    private func feed(
+        _ file: AVAudioFile,
+        through converter: AVAudioConverter,
+        as analyzerFormat: AVAudioFormat,
+        into continuation: AsyncStream<AnalyzerInput>.Continuation
+    ) async {
+        let sourceFormat = file.processingFormat
+        let ratio = analyzerFormat.sampleRate / sourceFormat.sampleRate
+
+        while file.framePosition < file.length {
+            guard let source = AVAudioPCMBuffer(
+                pcmFormat: sourceFormat,
+                frameCapacity: Self.fileReadChunk
+            ) else { return }
+
+            do {
+                try file.read(into: source)
+            } catch {
+                return
+            }
+            guard source.frameLength > 0 else { return }
+
+            let capacity = AVAudioFrameCount(ceil(Double(source.frameLength) * ratio)) + 1
+            guard let converted = AVAudioPCMBuffer(
+                pcmFormat: analyzerFormat,
+                frameCapacity: capacity
+            ) else { return }
+
+            let input = ConverterInput(source)
+            var conversionError: NSError?
+            let status = converter.convert(to: converted, error: &conversionError) { _, outputStatus in
+                if input.wasSupplied {
+                    outputStatus.pointee = .noDataNow
+                    return nil
+                }
+                input.wasSupplied = true
+                outputStatus.pointee = .haveData
+                return input.buffer
+            }
+
+            // `.inputRanDry` é o caminho normal aqui: a capacidade de saída tem
+            // uma folga de um frame, então o conversor nunca chega a enchê-la e
+            // nunca reporta `.haveData`. O que importa é ter saído áudio.
+            guard conversionError == nil,
+                  status == .haveData || status == .inputRanDry,
+                  converted.frameLength > 0
+            else { return }
+
+            continuation.yield(AnalyzerInput(buffer: converted))
+            await Task.yield()
+        }
     }
 
     func stop() async {
