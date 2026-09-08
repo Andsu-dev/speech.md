@@ -2,35 +2,35 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <key>CFBundleDevelopmentRegion</key>
-    <string>pt_BR</string>
-    <key>CFBundleExecutable</key>
-    <string>speech-md</string>
-    <key>CFBundleIconFile</key>
-    <string>AppIcon</string>
-    <key>CFBundleIdentifier</key>
-    <string>dev.anderson.speech-md</string>
-    <key>CFBundleInfoDictionaryVersion</key>
-    <string>6.0</string>
-    <key>CFBundleName</key>
-    <string>speech.md</string>
-    <key>CFBundlePackageType</key>
-    <string>APPL</string>
-    <key>CFBundleShortVersionString</key>
-    <string>0.6.0</string>
-    <key>CFBundleVersion</key>
-    <string>6</string>
-    <key>LSMinimumSystemVersion</key>
-    <string>26.0</string>
-    <key>NSHighResolutionCapable</key>
-    <true/>
-    <key>NSMicrophoneUsageDescription</key>
-    <string>O speech.md usa seu microfone para identificar e transcrever sua fala como You.</string>
-    <key>NSScreenCaptureUsageDescription</key>
-    <string>O speech.md captura o áudio da call para transcrever as outras pessoas, sem gravar vídeo.</string>
-    <key>NSAudioCaptureUsageDescription</key>
-    <string>O speech.md usa o áudio do sistema para identificar e transcrever as outras pessoas da call.</string>
-    <key>NSSpeechRecognitionUsageDescription</key>
-    <string>Usamos reconhecimento de fala on-device para transcrever o áudio.</string>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>pt_BR</string>
+	<key>CFBundleExecutable</key>
+	<string>speech-md</string>
+	<key>CFBundleIconFile</key>
+	<string>AppIcon</string>
+	<key>CFBundleIdentifier</key>
+	<string>dev.anderson.speech-md</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>speech.md</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>0.7.0</string>
+	<key>CFBundleVersion</key>
+	<string>7</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>26.0</string>
+	<key>NSAudioCaptureUsageDescription</key>
+	<string>O speech.md usa o áudio do sistema para identificar e transcrever as outras pessoas da call.</string>
+	<key>NSHighResolutionCapable</key>
+	<true/>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>O speech.md usa seu microfone para identificar e transcrever sua fala como You.</string>
+	<key>NSScreenCaptureUsageDescription</key>
+	<string>O speech.md captura o áudio da call para transcrever as outras pessoas, sem gravar vídeo.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Usamos reconhecimento de fala on-device para transcrever o áudio.</string>
 </dict>
 </plist>
