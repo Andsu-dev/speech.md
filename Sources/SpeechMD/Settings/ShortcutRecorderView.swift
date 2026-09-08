@@ -31,11 +31,38 @@ struct ShortcutRecorderView: View {
                     .stroke(isRecording ? Theme.accent : Theme.border, lineWidth: isRecording ? 1.5 : 1)
             }
             .overlay {
-                Text(isRecording ? t("Pressione as teclas", "Press the keys") : binding.displayString)
+                label
                     .font(.system(size: 13, weight: .medium, design: isRecording ? .default : .rounded))
                     .foregroundStyle(isRecording ? Theme.accent : Theme.textPrimary)
                     .allowsHitTesting(false)
             }
+    }
+
+    @ViewBuilder
+    private var label: some View {
+        if isRecording {
+            Text(t("Pressione as teclas", "Press the keys"))
+        } else {
+            HotkeyLabel(binding: binding)
+        }
+    }
+}
+
+/// A tecla fn tem o globo gravado nela desde os teclados com emoji — sem ele
+/// o atalho não parece a tecla que a pessoa vai apertar. Fonte e cor vêm de
+/// quem usa.
+struct HotkeyLabel: View {
+    let binding: HotkeyBinding
+    var iconSize: CGFloat = 12
+
+    var body: some View {
+        HStack(spacing: 5) {
+            if binding.isFunctionKey {
+                Image(systemName: "globe")
+                    .font(.system(size: iconSize, weight: .medium))
+            }
+            Text(binding.displayString)
+        }
     }
 }
 

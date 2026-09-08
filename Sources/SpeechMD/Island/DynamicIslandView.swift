@@ -12,11 +12,27 @@ struct DynamicIslandView: View {
     var result: String?
     var isProcessing = false
     var isClosing = false
+    /// A borda de onde a ilha sai. Ela sempre encosta numa: o lado colado
+    /// fica reto e o resto arredonda.
+    var placement: IslandPlacement = .notch
+    /// Na lateral ela fica em pé: a onda em cima, o cronômetro embaixo.
+    var isVertical = false
     var onCopy: (() -> Void)?
+    /// Clique sem arrasto: começa ou encerra o ditado.
+    var onActivate: (() -> Void)?
+    /// Cada quadro do arrasto. Quem move o painel é o controller, que lê a
+    /// posição do mouse na tela — a translação do gesto zeraria a cada
+    /// movimento porque a janela anda junto com o cursor.
+    var onDragChange: (() -> Void)?
+    var onDragEnd: ((Bool) -> Void)?
 
     static let earWidth: CGFloat = 46
     static let warningEarWidth: CGFloat = 150
     static let height: CGFloat = 34
+    /// Em pé ela mantém a espessura da pill deitada (`height`) e cresce só no
+    /// comprimento — fina e comprida, não um bloco.
+    static let verticalWidth: CGFloat = height
+    static let verticalHeight: CGFloat = 140
     private static let resultFontSize: CGFloat = 12.5
     private static let resultInset: CGFloat = 13
 
@@ -38,42 +54,107 @@ struct DynamicIslandView: View {
         return resultInset * 2 + min(ceil(bounds.height), line * 4) + 10 + 26
     }
 
+    /// Abaixo disso o movimento é tremida de clique, não arrasto.
+    private static let dragSlop: CGFloat = 4
+
+    @State private var isDraggingSelf = false
     @State private var isOpen = false
     @State private var drain: CGFloat = 1
     @State private var didCopy = false
 
     var body: some View {
         VStack(spacing: 0) {
+            // Embaixo a bolha sai por cima da pill, senão ela cresceria pra
+            // fora da tela.
+            if placement == .bottom, let result {
+                resultBubble(result)
+            }
             pill
-            if let result {
+            if placement != .bottom, let result {
                 resultBubble(result)
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: edgeAlignment)
+    }
+
+    /// A ilha é empurrada contra a borda de onde ela sai.
+    private var edgeAlignment: Alignment {
+        switch placement {
+        case .notch: .top
+        case .bottom: .bottom
+        case .left: .leading
+        case .right: .trailing
+        }
     }
 
     private var pill: some View {
-        HStack(spacing: 0) {
-            leftEar
-                .frame(width: Self.earWidth, height: 16, alignment: .leading)
-
-            Color.clear
-                .frame(width: notchWidth)
-
-            rightEar
-                .frame(width: rightEarWidth, alignment: .trailing)
-        }
-        .padding(.horizontal, 12)
-        .opacity(isShown ? 1 : 0)
-        .frame(width: isShown ? nil : notchWidth, height: isShown ? Self.height : 0)
-        .background(.black, in: shape)
-        .clipShape(shape)
-        .shadow(color: .black.opacity(0.35), radius: 16, y: 8)
-        .animation(.spring(response: 0.3, dampingFraction: 0.84), value: isClosing)
-        .onAppear {
-            withAnimation(.spring(response: 0.42, dampingFraction: 0.72)) {
-                isOpen = true
+        pillContent
+            .opacity(isShown ? 1 : 0)
+            .background(.black, in: shape)
+            .clipShape(shape)
+            .shadow(color: .black.opacity(0.35), radius: 16, y: 8)
+            // Parada ela é botão, então mãozinha; gravando ela é só algo que
+            // dá pra arrastar.
+            .pointerStyle(isDraggingSelf ? .grabActive : (isListening ? .grabIdle : .link))
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { value in
+                        guard hypot(value.translation.width, value.translation.height)
+                            > Self.dragSlop else { return }
+                        isDraggingSelf = true
+                        onDragChange?()
+                    }
+                    .onEnded { _ in
+                        let moved = isDraggingSelf
+                        isDraggingSelf = false
+                        onDragEnd?(moved)
+                        if !moved { onActivate?() }
+                    }
+            )
+            .animation(.spring(response: 0.3, dampingFraction: 0.84), value: isClosing)
+            .animation(.spring(response: 0.32, dampingFraction: 0.8), value: placement)
+            .animation(.spring(response: 0.34, dampingFraction: 0.78), value: isVertical)
+            .onAppear {
+                withAnimation(.spring(response: 0.42, dampingFraction: 0.72)) {
+                    isOpen = true
+                }
             }
+    }
+
+    @ViewBuilder
+    private var pillContent: some View {
+        if isVertical {
+            // Onda numa ponta, microfone/cronômetro na outra: o meio fica
+            // vazio de propósito.
+            VStack(spacing: 0) {
+                leftEar
+                    .frame(height: 24)
+                Spacer(minLength: 16)
+                rightEar
+            }
+            .padding(.vertical, 18)
+            // Sem isto o cronômetro encosta na parede da pill: 34pt de
+            // espessura não sobra nada pra "0:07".
+            .padding(.horizontal, 5)
+            .frame(width: Self.verticalWidth, height: isShown ? Self.verticalHeight : 0)
+        } else {
+            HStack(spacing: 0) {
+                leftEar
+                    .frame(width: Self.earWidth, height: 16, alignment: .leading)
+
+                // Deitada ela mantém a largura do topo em qualquer borda:
+                // encolher embaixo fazia parecer outro componente.
+                Color.clear
+                    .frame(width: notchWidth)
+
+                rightEar
+                    .frame(width: rightEarWidth, alignment: .trailing)
+            }
+            .padding(.horizontal, 12)
+            .frame(
+                width: isShown ? nil : notchWidth,
+                height: isShown ? Self.height : 0
+            )
         }
     }
 
@@ -169,31 +250,53 @@ struct DynamicIslandView: View {
                     .lineLimit(1)
             }
             .transition(.opacity.combined(with: .move(edge: .trailing)))
+        } else if !isListening {
+            // Parada, ela é um botão: o microfone diz que dá pra clicar.
+            Image(systemName: "mic.fill")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.75))
         } else {
             Text(formattedElapsed)
-                .font(.system(size: 11, weight: .medium, design: .rounded))
+                .font(.system(size: isVertical ? 10 : 11, weight: .medium, design: .rounded))
                 .foregroundStyle(.white.opacity(0.85))
                 .monospacedDigit()
+                .minimumScaleFactor(0.8)
+                .lineLimit(1)
                 .contentTransition(.numericText())
                 .animation(.snappy(duration: 0.28), value: elapsed)
         }
     }
     private var shape: some Shape {
-        UnevenRoundedRectangle(
-            topLeadingRadius: 0,
-            bottomLeadingRadius: result == nil ? 18 : 0,
-            bottomTrailingRadius: result == nil ? 18 : 0,
-            topTrailingRadius: 0,
+        let radius: CGFloat = isVertical ? Self.verticalWidth / 2 : 18
+        var corners = (top: radius, bottom: radius, leading: radius, trailing: radius)
+        // O lado colado na borda da tela é reto.
+        switch placement {
+        case .notch: corners.top = 0
+        case .bottom: corners.bottom = 0
+        case .left: corners.leading = 0
+        case .right: corners.trailing = 0
+        }
+        // E o lado por onde a bolha de resultado sai também.
+        if result != nil {
+            if placement == .bottom { corners.top = 0 } else { corners.bottom = 0 }
+        }
+        return UnevenRoundedRectangle(
+            topLeadingRadius: min(corners.top, corners.leading),
+            bottomLeadingRadius: min(corners.bottom, corners.leading),
+            bottomTrailingRadius: min(corners.bottom, corners.trailing),
+            topTrailingRadius: min(corners.top, corners.trailing),
             style: .continuous
         )
     }
 
     private var bubbleShape: some Shape {
-        UnevenRoundedRectangle(
-            topLeadingRadius: 0,
-            bottomLeadingRadius: 18,
-            bottomTrailingRadius: 18,
-            topTrailingRadius: 0,
+        // Embaixo a bolha fica acima da pill, então é ela que encosta na borda.
+        let sitsAbove = placement == .bottom
+        return UnevenRoundedRectangle(
+            topLeadingRadius: sitsAbove ? 18 : 0,
+            bottomLeadingRadius: sitsAbove ? 0 : 18,
+            bottomTrailingRadius: sitsAbove ? 0 : 18,
+            topTrailingRadius: sitsAbove ? 18 : 0,
             style: .continuous
         )
     }

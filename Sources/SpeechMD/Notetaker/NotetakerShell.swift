@@ -41,7 +41,12 @@ struct NotetakerShell: View {
             gesture.onFinish = finishDictation
             dictation.onFinish = handleDictationOutcome
             dictation.onFailure = handleDictationFailure
+            // Parada na borda ela é o botão de começar a falar sem passar
+            // pelo app.
+            island.onActivate = toggleDictation
+            island.staysVisible = islandStaysVisible
         }
+        .onChange(of: islandStaysVisible) { _, stays in island.staysVisible = stays }
         .onChange(of: settings.hotkey) { _, _ in registerHotkeys() }
         .onChange(of: HotkeyCapture.shared.isCapturing) { _, isCapturing in
             isCapturing ? hotkey.unregister() : registerHotkeys()
@@ -49,7 +54,7 @@ struct NotetakerShell: View {
         .onChange(of: model.phase) { _, phase in
             guard case .failed = phase else { return }
             island.isSessionActive = false
-            island.isVisible = false
+            island.hide()
             meetingStartedAt = nil
         }
         .task(id: meetingStartedAt) {
@@ -119,7 +124,7 @@ struct NotetakerShell: View {
             island.showResult(outcome.text)
             playFeedback(.warning)
         } else {
-            island.isVisible = false
+            island.hide()
             if !outcome.text.isEmpty {
                 playFeedback(.finish)
             }
@@ -140,6 +145,11 @@ struct NotetakerShell: View {
 
     /// O botão Falar e o clique na ilha entram por aqui; o gesto precisa saber
     /// para não achar que ainda está gravando no próximo toque da tecla.
+    /// A ilha só fica parada na tela se ela estiver ligada e a opção também.
+    private var islandStaysVisible: Bool {
+        settings.showIsland && settings.islandAlwaysVisible
+    }
+
     private func toggleDictation() {
         guard !model.phase.isRunning else { return }
         gesture.reset()
@@ -154,6 +164,7 @@ struct NotetakerShell: View {
             contextualTerms: SpokenTerms.all(with: snippets.snippets.map(\.expansion)),
             formatAsMarkdown: settings.formatAsMarkdown,
             polishTerms: settings.polishTerms,
+            softenLanguage: settings.softenLanguage,
             expand: { snippets.expand($0) }
         )
         island.isSessionActive = true
@@ -203,7 +214,7 @@ struct NotetakerShell: View {
 
         model.stop()
         island.isSessionActive = false
-        island.isVisible = false
+        island.hide()
         meetingStartedAt = nil
         elapsed = 0
         guard !you.isEmpty || !others.isEmpty else { return }

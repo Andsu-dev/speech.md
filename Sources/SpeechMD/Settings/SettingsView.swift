@@ -92,7 +92,7 @@ struct SettingsView: View {
                     SettingsRow(
                         title: t("Escrever em Markdown", "Write in Markdown"),
                         subtitle: TranscriptFormatter.isAvailable
-                            ? t("Enumerações viram lista e a pontuação é corrigida por um modelo no dispositivo. Adiciona cerca de 1s antes de colar.", "Enumerations become a list and punctuation is fixed by an on-device model. Adds about 1s before pasting.")
+                            ? t("Enumerações viram lista e a pontuação é corrigida por um modelo no dispositivo.", "Enumerations become a list and punctuation is fixed by an on-device model.")
                             : t("Indisponível: requer Apple Intelligence ativa neste Mac.", "Unavailable: requires Apple Intelligence enabled on this Mac.")
                     ) {
                         Toggle("", isOn: $settings.formatAsMarkdown)
@@ -104,9 +104,23 @@ struct SettingsView: View {
                     Divider().overlay(Theme.border)
 
                     SettingsRow(
-                        title: t("Corrigir termos estrangeiros", "Fix foreign terms"),
+                        title: t("Suavizar linguagem", "Soften language"),
+                        subtitle: LanguageSoftener.isAvailable
+                            ? t("Reescreve o que você falou em linguagem educada, mantendo o pedido e a urgência.", "Rewrites what you said in polite language, keeping the request and the urgency.")
+                            : t("Indisponível: requer Apple Intelligence ativa neste Mac.", "Unavailable: requires Apple Intelligence enabled on this Mac.")
+                    ) {
+                        Toggle("", isOn: $settings.softenLanguage)
+                            .labelsHidden()
+                            .toggleStyle(.switch)
+                            .disabled(!LanguageSoftener.isAvailable)
+                    }
+
+                    Divider().overlay(Theme.border)
+
+                    SettingsRow(
+                        title: t("Corrigir termos", "Fix terms"),
                         subtitle: TermPolisher.isAvailable
-                            ? t("Corrige palavras que o dicionário não reconhece. Custa cerca de 1s antes de colar.", "Fixes words the dictionary doesn't know. Costs about 1s before pasting.")
+                            ? t("Corrige palavras que o dicionário não reconhece.", "Fixes words the dictionary doesn't know.")
                             : t("Indisponível: requer Apple Intelligence ativa neste Mac.", "Unavailable: requires Apple Intelligence enabled on this Mac.")
                     ) {
                         Toggle("", isOn: $settings.polishTerms)
@@ -165,6 +179,18 @@ struct SettingsView: View {
                         Toggle("", isOn: $settings.showIsland)
                             .labelsHidden()
                             .toggleStyle(.switch)
+                    }
+
+                    Divider().overlay(Theme.border)
+
+                    SettingsRow(
+                        title: t("Deixar a ilha sempre na tela", "Keep the island on screen"),
+                        subtitle: t("Parada ela fica na borda com um microfone: clicar começa a gravar. Arraste pra escolher a borda.", "At rest it sits on the edge with a microphone: click to start recording. Drag it to pick the edge.")
+                    ) {
+                        Toggle("", isOn: $settings.islandAlwaysVisible)
+                            .labelsHidden()
+                            .toggleStyle(.switch)
+                            .disabled(!settings.showIsland)
                     }
                 }
             }
@@ -306,62 +332,18 @@ private struct SettingsPicker<Value: Hashable>: View {
     }
 
     private func present() {
-        let target = MenuTarget { index in selection = options[index].value }
-        let menu = NSMenu()
-        // Sem isso o AppKit pergunta pro target se cada item vale e, como
-        // MenuTarget não responde, desenha tudo cinza e desabilitado.
-        menu.autoenablesItems = false
-        for (index, option) in options.enumerated() {
-            let item = NSMenuItem(
-                title: option.label,
-                action: #selector(MenuTarget.pick(_:)),
-                keyEquivalent: ""
-            )
-            item.target = target
-            item.tag = index
-            item.state = option.value == selection ? .on : .off
-            menu.addItem(item)
-        }
-
-        // `popUp` trava a runloop até fechar, então o estado aberto precisa
-        // ser pintado antes — daí abrir no turno seguinte.
         isOpen = true
-        DispatchQueue.main.async {
-            // Ancorado na própria view do botão: o menu abre encostado nele
-            // sem conta de coordenada nenhuma. NSView conta de baixo pra
-            // cima, então 4pt abaixo da base é y negativo.
-            // `NSMenuItem.target` é weak: sem segurar o MenuTarget aqui ele
-            // morre no fim de present() e a escolha não chega em ninguém.
-            withExtendedLifetime(target) {
-                menu.popUp(positioning: nil, at: NSPoint(x: 0, y: -4), in: anchor)
-            }
-            isOpen = false
-        }
-    }
-}
-
-/// View invisível só pra dar um ponto de ancoragem AppKit ao menu. Não pega
-/// clique nenhum: quem trata o toque é o SwiftUI por cima.
-private final class MenuAnchorView: NSView {
-    override func hitTest(_ point: NSPoint) -> NSView? { nil }
-}
-
-private struct MenuAnchor: NSViewRepresentable {
-    let view: NSView
-
-    func makeNSView(context: Context) -> NSView { view }
-    func updateNSView(_ nsView: NSView, context: Context) {}
-}
-
-private final class MenuTarget: NSObject {
-    private let handler: (Int) -> Void
-
-    init(handler: @escaping (Int) -> Void) {
-        self.handler = handler
-    }
-
-    @objc func pick(_ sender: NSMenuItem) {
-        handler(sender.tag)
+        PopUpMenu.show(
+            options.enumerated().map { index, option in
+                PopUpMenu.Item(option.label, isOn: option.value == selection) {
+                    selection = options[index].value
+                }
+            },
+            from: anchor
+        )
+        // O menu trava a runloop enquanto está aberto, então isto só roda
+        // quando ele fecha.
+        DispatchQueue.main.async { isOpen = false }
     }
 }
 

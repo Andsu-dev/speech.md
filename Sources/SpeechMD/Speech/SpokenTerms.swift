@@ -16,7 +16,15 @@ enum SpokenTerms {
         "bug", "feature", "refactor", "endpoint", "payload", "token",
         "framework", "library", "package", "runtime", "backend", "frontend",
         "design", "layout", "dashboard", "landing page", "template",
-        "workspace", "pipeline", "workflow", "dropdown", "checkbox", "toggle"
+        "workspace", "pipeline", "workflow", "dropdown", "checkbox", "toggle",
+        // nomes que o reconhecedor não tem no vocabulário e vira outra coisa:
+        // "Claude" saía "Cloud", "claro", "Cláudio"
+        "Claude", "Anthropic", "ChatGPT", "OpenAI", "Gemini", "Copilot",
+        "Cursor", "Xcode", "SwiftUI", "TypeScript", "Vercel", "Supabase",
+        "prompt", "LLM",
+        // siglas que o reconhecedor quebra em sílaba solta: "API" saía "a PI"
+        "API", "REST", "JSON", "SDK", "CLI", "URL", "HTTP", "SQL", "CSS",
+        "HTML", "GitHub", "webhook", "query", "schema", "migration"
     ]
 
     /// A lista final: os termos fixos mais o que a pessoa cadastrou no
