@@ -5,6 +5,7 @@ struct SidebarView: View {
     @Binding var isCollapsed: Bool
 
     @Namespace private var selectionPill
+    @State private var stars: Int? = GitHubStars.cached
 
     private var width: CGFloat { isCollapsed ? 80 : 236 }
 
@@ -46,7 +47,14 @@ struct SidebarView: View {
                     namespace: selectionPill,
                     action: { selection = .settings }
                 )
-                LinkRow(title: "GitHub", icon: BrandIcon.github, url: Links.repository, isCollapsed: isCollapsed)
+                LinkRow(
+                    title: "GitHub",
+                    icon: BrandIcon.github,
+                    url: Links.repository,
+                    isCollapsed: isCollapsed,
+                    badge: stars.map(GitHubStars.format)
+                )
+                .task { stars = await GitHubStars.fetch() ?? stars }
                 LinkRow(title: "@andersonbrdev", icon: BrandIcon.x, url: Links.profile, isCollapsed: isCollapsed)
             }
             .padding(.horizontal, isCollapsed ? 8 : 12)
@@ -148,6 +156,8 @@ private struct LinkRow: View {
     let icon: Image
     let url: URL
     let isCollapsed: Bool
+    /// Texto pequeno à direita — hoje só a contagem de estrelas do repo.
+    var badge: String?
 
     @State private var isHovering = false
 
@@ -165,6 +175,17 @@ private struct LinkRow: View {
                         .font(.system(size: 13))
                         .fixedSize()
                     Spacer(minLength: 0)
+                    if let badge {
+                        HStack(spacing: 3) {
+                            Image(systemName: "star.fill")
+                                .font(.system(size: 9))
+                            Text(badge)
+                                .font(.system(size: 11, weight: .medium))
+                                .monospacedDigit()
+                        }
+                        .foregroundStyle(Theme.textTertiary)
+                        .transition(.opacity.combined(with: .scale(scale: 0.9)))
+                    }
                     Image(systemName: "arrow.up.right")
                         .font(.system(size: 10))
                         .opacity(isHovering ? 1 : 0)
@@ -183,6 +204,31 @@ private struct LinkRow: View {
         .buttonStyle(.plain)
         .pointerStyle(.link)
         .onHover { isHovering = $0 }
+        .animation(.snappy(duration: 0.25), value: badge)
         .help(isCollapsed ? title : "")
+    }
+}
+
+/// Contagem de estrelas do repo. Uma chamada por abertura; o último valor
+/// fica guardado pra o número já estar na tela antes da rede responder.
+enum GitHubStars {
+    private static let key = "githubStars"
+
+    static var cached: Int? {
+        UserDefaults.standard.object(forKey: key) as? Int
+    }
+
+    static func fetch() async -> Int? {
+        guard let (data, _) = try? await URLSession.shared.data(from: Links.repositoryAPI),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let count = json["stargazers_count"] as? Int else { return nil }
+        UserDefaults.standard.set(count, forKey: key)
+        return count
+    }
+
+    static func format(_ count: Int) -> String {
+        count < 1000
+            ? "\(count)"
+            : String(format: "%.1fk", Double(count) / 1000).replacingOccurrences(of: ".0k", with: "k")
     }
 }
