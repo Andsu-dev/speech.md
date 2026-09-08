@@ -67,6 +67,7 @@ final class DictationSession {
     private var expand: (String) -> String = { $0 }
     private var formatAsMarkdown = false
     private var polishTerms = false
+    private var softenLanguage = false
     private var localeIdentifier = "pt-BR"
 
     func start(
@@ -76,6 +77,7 @@ final class DictationSession {
         contextualTerms: [String] = SpokenTerms.all(),
         formatAsMarkdown: Bool = false,
         polishTerms: Bool = false,
+        softenLanguage: Bool = false,
         expand: @escaping (String) -> String = { $0 }
     ) {
         guard !isRunning else { return }
@@ -84,10 +86,12 @@ final class DictationSession {
         self.expand = expand
         self.formatAsMarkdown = formatAsMarkdown
         self.polishTerms = polishTerms
+        self.softenLanguage = softenLanguage
         self.localeIdentifier = localeIdentifier
         targetIssue = TargetIssue.current(target: targetApp)
 
         if polishTerms { TermPolisher.prewarm() }
+        if softenLanguage { LanguageSoftener.prewarm() }
         if formatAsMarkdown { TranscriptFormatter.prewarm() }
 
         state = .starting
@@ -141,6 +145,11 @@ final class DictationSession {
             var text = expand(raw)
             if polishTerms {
                 text = await TermPolisher.polish(text, localeIdentifier: localeIdentifier)
+            }
+            // Antes do Markdown: a formatação trabalha em cima do texto já
+            // limpo, e não tem palavrão sobrando pra ela reposicionar.
+            if softenLanguage {
+                text = await LanguageSoftener.soften(text)
             }
             if formatAsMarkdown {
                 text = await TranscriptFormatter.format(text)
