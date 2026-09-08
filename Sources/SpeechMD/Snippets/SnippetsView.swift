@@ -1,9 +1,13 @@
+import AppKit
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct SnippetsView: View {
     let store: SnippetStore
 
     @State private var editing: Snippet?
+    @State private var importReport: String?
+    @State private var importAnchor = MenuAnchorView()
 
     var body: some View {
         ScrollView {
@@ -35,6 +39,15 @@ struct SnippetsView: View {
             .padding(.horizontal, 36)
             .padding(.vertical, 30)
         }
+        .alert(
+            importReport ?? "",
+            isPresented: Binding(
+                get: { importReport != nil },
+                set: { if !$0 { importReport = nil } }
+            )
+        ) {
+            Button("OK") { importReport = nil }
+        }
         .sheet(item: $editing) { snippet in
             SnippetEditor(snippet: snippet) { updated in
                 store.save(updated)
@@ -58,6 +71,34 @@ struct SnippetsView: View {
             }
             Spacer(minLength: 12)
             Button {
+                PopUpMenu.show(
+                    [
+                        PopUpMenu.Item(
+                            t("Importar do Wispr Flow", "Import from Wispr Flow"),
+                            isEnabled: WisprFlowImport.isAvailable
+                        ) { runImport(from: nil) },
+                        PopUpMenu.Item(t("Importar de um arquivo…", "Import from a file…")) {
+                            chooseFile()
+                        }
+                    ],
+                    from: importAnchor
+                )
+            } label: {
+                Image(systemName: "square.and.arrow.down")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.85))
+                    .frame(width: 36, height: 36)
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 9, style: .continuous)
+                            .stroke(.white.opacity(0.25), lineWidth: 1)
+                    }
+            }
+            .buttonStyle(.plain)
+            .pointerStyle(.link)
+            .help(t("Importar dicionário", "Import dictionary"))
+            .background { MenuAnchor(view: importAnchor) }
+
+            Button {
                 editing = Snippet(trigger: "", expansion: "")
             } label: {
                 HStack(spacing: 7) {
@@ -77,6 +118,30 @@ struct SnippetsView: View {
         .padding(.horizontal, 22)
         .padding(.vertical, 18)
         .background(Theme.contrastSurface, in: RoundedRectangle(cornerRadius: Theme.cardRadius, style: .continuous))
+    }
+
+    private func chooseFile() {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.json, .commaSeparatedText, .plainText, .data]
+        panel.allowsMultipleSelection = false
+        panel.message = t(
+            "Escolha o banco do Wispr Flow (flow.sqlite) ou um arquivo com os atalhos.",
+            "Pick the Wispr Flow database (flow.sqlite) or a file with the shortcuts."
+        )
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        runImport(from: url)
+    }
+
+    private func runImport(from url: URL?) {
+        do {
+            let added = try WisprFlowImport.read(from: url)
+            let saved = store.merge(added)
+            importReport = saved == 0
+                ? t("Nada novo: o dicionário já está aqui.", "Nothing new: the dictionary is already here.")
+                : t("\(saved) atalhos importados do Wispr Flow.", "\(saved) shortcuts imported from Wispr Flow.")
+        } catch {
+            importReport = error.localizedDescription
+        }
     }
 
     private var emptyState: some View {

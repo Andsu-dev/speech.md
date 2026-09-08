@@ -38,6 +38,20 @@ final class SnippetStore {
         persist()
     }
 
+    /// Junta uma leva de fora, pulando gatilho que já existe: importar duas
+    /// vezes não pode duplicar a lista. Devolve quantos entraram.
+    @discardableResult
+    func merge(_ incoming: [Snippet]) -> Int {
+        let existing = Set(snippets.map { $0.trigger.lowercased() })
+        let fresh = incoming.filter {
+            $0.isValid && !existing.contains($0.trigger.lowercased())
+        }
+        guard !fresh.isEmpty else { return 0 }
+        snippets.append(contentsOf: fresh)
+        persist()
+        return fresh.count
+    }
+
     func delete(_ snippet: Snippet) {
         snippets.removeAll { $0.id == snippet.id }
         persist()
