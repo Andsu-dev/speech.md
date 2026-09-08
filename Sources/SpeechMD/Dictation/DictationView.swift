@@ -76,7 +76,7 @@ struct DictationView: View {
             }
             Spacer(minLength: 12)
 
-            Text(hotkey.displayString)
+            HotkeyLabel(binding: hotkey)
                 .font(.system(size: 12, weight: .medium, design: .rounded))
                 .foregroundStyle(.white.opacity(0.75))
                 .padding(.horizontal, 11)

@@ -41,8 +41,18 @@ final class AppSettings {
         didSet { defaults.set(showIsland, forKey: Keys.showIsland) }
     }
 
+    /// Ilha parada na borda quando não há gravação, servindo de botão.
+    var islandAlwaysVisible: Bool {
+        didSet { defaults.set(islandAlwaysVisible, forKey: Keys.islandAlwaysVisible) }
+    }
+
     var formatAsMarkdown: Bool {
         didSet { defaults.set(formatAsMarkdown, forKey: Keys.formatAsMarkdown) }
+    }
+
+    /// Troca palavrão por linguagem neutra antes de colar.
+    var softenLanguage: Bool {
+        didSet { defaults.set(softenLanguage, forKey: Keys.softenLanguage) }
     }
 
     var polishTerms: Bool {
@@ -69,8 +79,10 @@ final class AppSettings {
             .flatMap(RecognitionMode.init(rawValue:)) ?? .quality
         captureSystemAudio = defaults.object(forKey: Keys.captureSystemAudio) as? Bool ?? true
         showIsland = defaults.object(forKey: Keys.showIsland) as? Bool ?? true
+        islandAlwaysVisible = defaults.object(forKey: Keys.islandAlwaysVisible) as? Bool ?? true
         formatAsMarkdown = defaults.object(forKey: Keys.formatAsMarkdown) as? Bool ?? true
         polishTerms = defaults.object(forKey: Keys.polishTerms) as? Bool ?? true
+        softenLanguage = defaults.object(forKey: Keys.softenLanguage) as? Bool ?? false
         soundFeedback = defaults.object(forKey: Keys.soundFeedback) as? Bool ?? true
         hapticFeedback = defaults.object(forKey: Keys.hapticFeedback) as? Bool ?? true
         Language.isEnglish = Language.matches(localeIdentifier: localeIdentifier)
@@ -95,8 +107,10 @@ final class AppSettings {
         static let recognitionMode = "recognitionMode"
         static let captureSystemAudio = "captureSystemAudio"
         static let showIsland = "showIsland"
+        static let islandAlwaysVisible = "islandAlwaysVisible"
         static let formatAsMarkdown = "formatAsMarkdown"
         static let polishTerms = "polishTerms"
+        static let softenLanguage = "softenLanguage"
         static let soundFeedback = "soundFeedback"
         static let hapticFeedback = "hapticFeedback"
     }
