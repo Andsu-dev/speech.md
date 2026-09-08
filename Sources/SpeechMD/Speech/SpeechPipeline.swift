@@ -260,10 +260,12 @@ actor SpeechPipeline {
             ) else {
                 throw SpeechPipelineError.unsupportedLocale(requestedLocale.identifier)
             }
-            let transcriber = DictationTranscriber(
-                locale: locale,
-                preset: .progressiveShortDictation
-            )
+            // O preset de ditado vem sem pontuação — é por isso que o texto
+            // sai corrido. Ligar a opção usa o mesmo modelo, sem custo de
+            // latência; o SpeechTranscriber do modo de precisão já pontua.
+            var preset = DictationTranscriber.Preset.progressiveShortDictation
+            preset.transcriptionOptions.insert(.punctuation)
+            let transcriber = DictationTranscriber(locale: locale, preset: preset)
             try await ensureAssets(for: [transcriber])
             let analyzer = SpeechAnalyzer(modules: [transcriber], options: options)
             try await analyzer.setContext(analysisContext())
