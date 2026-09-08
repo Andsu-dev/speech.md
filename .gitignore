@@ -3,3 +3,6 @@
 .swiftpm/
 dist/
 .DS_Store
+# Empacotamento do dmg: ferramenta interna, não faz parte do projeto.
+scripts/dmg.sh
+scripts/dmg-background.swift
