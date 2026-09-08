@@ -66,11 +66,11 @@ final class AppSettings {
             .flatMap(AppAppearance.init(rawValue:)) ?? .system
         inputDeviceUID = defaults.string(forKey: Keys.inputDeviceUID) ?? ""
         recognitionMode = defaults.string(forKey: Keys.recognitionMode)
-            .flatMap(RecognitionMode.init(rawValue:)) ?? .lowLatency
+            .flatMap(RecognitionMode.init(rawValue:)) ?? .quality
         captureSystemAudio = defaults.object(forKey: Keys.captureSystemAudio) as? Bool ?? true
         showIsland = defaults.object(forKey: Keys.showIsland) as? Bool ?? true
-        formatAsMarkdown = defaults.object(forKey: Keys.formatAsMarkdown) as? Bool ?? false
-        polishTerms = defaults.object(forKey: Keys.polishTerms) as? Bool ?? false
+        formatAsMarkdown = defaults.object(forKey: Keys.formatAsMarkdown) as? Bool ?? true
+        polishTerms = defaults.object(forKey: Keys.polishTerms) as? Bool ?? true
         soundFeedback = defaults.object(forKey: Keys.soundFeedback) as? Bool ?? true
         hapticFeedback = defaults.object(forKey: Keys.hapticFeedback) as? Bool ?? true
         Language.isEnglish = Language.matches(localeIdentifier: localeIdentifier)

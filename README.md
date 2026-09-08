@@ -100,57 +100,30 @@ targets for sustained use — first partial under 300 ms, sustained lag under
 brew install Andsu-dev/tap/speech-md
 ```
 
+Or grab the `.dmg` from the [latest release](https://github.com/Andsu-dev/speech.md/releases/latest)
+and drag the app into Applications.
+
 The app is signed with a local certificate, not notarized by Apple. The cask
 clears the Gatekeeper quarantine flag on install, so it opens on the first
-click.
+click. From the dmg macOS blocks the first launch — right click the app and
+choose Open, or run `xattr -d com.apple.quarantine /Applications/speech.md.app`.
 
 Runs on Apple Silicon, macOS 26 or later.
 
-## Build
+## Development
 
-Only needed to work on the app, Xcode 26 or later.
-
-```sh
-./scripts/bundle.sh
-open dist/speech.md.app
-```
-
-### Release
+Xcode 26 or later.
 
 ```sh
-./scripts/release.sh
+./scripts/bundle.sh    # build the .app into dist/
+./scripts/install.sh   # build and replace the installed app
+./scripts/release.sh   # build, publish the zip and the dmg to a GitHub Release
 ```
 
-Builds, zips the bundle, publishes a GitHub Release and prints the `version` and
-`sha256` to paste into the cask at
-[Andsu-dev/homebrew-tap](https://github.com/Andsu-dev/homebrew-tap).
-
-### Signing
-
-The script signs with the identity in `SPEECH_SIGN_IDENTITY` (default:
-`speech.md Local`). This matters more than it looks: macOS ties privacy
-permissions to the app's signature, and an ad-hoc signature
-(`codesign --sign -`) produces a new hash on every build — the system treats
-each rebuild as a different app and asks for microphone, screen and
-accessibility access again, every time.
-
-To create a stable local identity, once:
-
-```sh
-openssl req -x509 -newkey rsa:2048 -keyout key.pem -out cert.pem -days 3650 \
-  -nodes -subj "/CN=speech.md Local" \
-  -addext "extendedKeyUsage=codeSigning" \
-  -addext "basicConstraints=critical,CA:false"
-openssl pkcs12 -export -legacy -out cert.p12 -inkey key.pem -in cert.pem \
-  -passout pass:yourpassword -name "speech.md Local"
-security import cert.p12 -k ~/Library/Keychains/login.keychain-db \
-  -P yourpassword -T /usr/bin/codesign
-security add-trusted-cert -r trustRoot -p codeSign \
-  -k ~/Library/Keychains/login.keychain-db cert.pem
-```
-
-Or export `SPEECH_SIGN_IDENTITY` with an Apple Development identity you already
-have.
+`release.sh` prints the `version` and `sha256` to paste into the cask at
+[Andsu-dev/homebrew-tap](https://github.com/Andsu-dev/homebrew-tap). Signing is
+local — [docs/signing.md](docs/signing.md) explains why that matters for the
+privacy permissions.
 
 ## Permissions
 
