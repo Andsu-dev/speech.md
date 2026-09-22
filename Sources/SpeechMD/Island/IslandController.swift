@@ -14,7 +14,21 @@ final class IslandController {
     /// fora usa isto em vez de `isVisible = false`: era assim que ela sumia
     /// depois de cada ditado mesmo configurada pra ficar.
     func hide() {
-        isVisible = staysVisible
+        if staysVisible {
+            isVisible = true
+            return
+        }
+        guard isVisible, !isClosing else {
+            isVisible = false
+            return
+        }
+        isClosing = true
+        Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(260))
+            guard !Task.isCancelled, let self else { return }
+            self.isClosing = false
+            self.isVisible = self.staysVisible
+        }
     }
 
     var warning: String? {

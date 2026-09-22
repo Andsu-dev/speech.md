@@ -92,7 +92,6 @@ struct DynamicIslandView: View {
             .opacity(isShown ? 1 : 0)
             .background(.black, in: shape)
             .clipShape(shape)
-            .shadow(color: .black.opacity(0.35), radius: 16, y: 8)
             // Parada ela é botão, então mãozinha; gravando ela é só algo que
             // dá pra arrastar.
             .pointerStyle(isDraggingSelf ? .grabActive : (isListening ? .grabIdle : .link))
@@ -368,8 +367,10 @@ private struct WaveformBars: View {
     }
 }
 
+#if canImport(PreviewsMacros)
 #Preview {
     DynamicIslandView(elapsed: 42, notchWidth: 180)
         .frame(width: 320, height: 60)
         .background(Color.gray.opacity(0.2))
 }
+#endif
