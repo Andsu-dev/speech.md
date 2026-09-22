@@ -4,7 +4,7 @@ set -euo pipefail
 project_dir="${0:A:h:h}"
 app_dir=$("$project_dir/scripts/bundle.sh" | tail -1)
 
-osascript -e 'quit app "speech.md"' 2>/dev/null || true
+pkill -f "/Applications/speech.md.app" 2>/dev/null || true
 for _ in {1..20}; do
     pgrep -f "/Applications/speech.md.app" >/dev/null || break
     sleep 0.25

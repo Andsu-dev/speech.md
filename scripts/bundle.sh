@@ -21,7 +21,14 @@ cp "App/conty-logo.svg" "$contents_dir/Resources/conty-logo.svg"
 # Ad-hoc (--sign -) gera uma cdhash nova a cada build, e o TCC amarra
 # microfone/tela/acessibilidade a ela — por isso as permissões resetavam
 # a cada rebuild. Com identidade fixa, concede-se uma vez só.
-signing_identity="${SPEECH_SIGN_IDENTITY:-speech.md Local}"
+if [[ -n "${SPEECH_SIGN_IDENTITY:-}" ]]; then
+    signing_identity="$SPEECH_SIGN_IDENTITY"
+elif security find-certificate -c "speech.md Local" >/dev/null 2>&1; then
+    signing_identity="speech.md Local"
+else
+    echo "Aviso: Certificado 'speech.md Local' não encontrado. Assinando ad-hoc (-)." >&2
+    signing_identity="-"
+fi
 codesign --force --deep --sign "$signing_identity" "$app_dir"
 
 echo "$app_dir"
