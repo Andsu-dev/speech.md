@@ -193,6 +193,28 @@ struct SettingsView: View {
                             .disabled(!settings.showIsland)
                     }
                 }
+
+                SettingsGroup(t("Dock e Segundo Plano", "Dock & Background")) {
+                    SettingsRow(
+                        title: t("Ocultar da Dock ao fechar janela", "Hide from Dock when window closes"),
+                        subtitle: t("Ao fechar a janela, o ícone sai da Dock mas o speech.md continua rodando em segundo plano.", "When the window is closed, the icon leaves the Dock while speech.md continues running in background.")
+                    ) {
+                        Toggle("", isOn: $settings.hideFromDockWhenClosed)
+                            .labelsHidden()
+                            .toggleStyle(.switch)
+                    }
+
+                    Divider().overlay(Theme.border)
+
+                    SettingsRow(
+                        title: t("Ocultar da Dock sempre", "Always hide from Dock"),
+                        subtitle: t("Executa discretamente apenas na barra de menus e no notch, sem ocupar a Dock.", "Runs quietly in the menu bar and notch without appearing in the Dock.")
+                    ) {
+                        Toggle("", isOn: $settings.alwaysHideFromDock)
+                            .labelsHidden()
+                            .toggleStyle(.switch)
+                    }
+                }
             }
             .padding(.horizontal, 36)
             .padding(.vertical, 30)
