@@ -41,6 +41,22 @@ final class AppSettings {
         didSet { defaults.set(showIsland, forKey: Keys.showIsland) }
     }
 
+    /// Ocultar da Dock quando a janela fechar, mantendo o app em background.
+    var hideFromDockWhenClosed: Bool {
+        didSet {
+            defaults.set(hideFromDockWhenClosed, forKey: Keys.hideFromDockWhenClosed)
+            AppDelegate.shared?.updateActivationPolicy()
+        }
+    }
+
+    /// Manter sempre fora da Dock (apenas barra de menus e notch).
+    var alwaysHideFromDock: Bool {
+        didSet {
+            defaults.set(alwaysHideFromDock, forKey: Keys.alwaysHideFromDock)
+            AppDelegate.shared?.updateActivationPolicy()
+        }
+    }
+
     /// Ilha parada na borda quando não há gravação, servindo de botão.
     var islandAlwaysVisible: Bool {
         didSet { defaults.set(islandAlwaysVisible, forKey: Keys.islandAlwaysVisible) }
@@ -79,7 +95,16 @@ final class AppSettings {
             .flatMap(RecognitionMode.init(rawValue:)) ?? .quality
         captureSystemAudio = defaults.object(forKey: Keys.captureSystemAudio) as? Bool ?? true
         showIsland = defaults.object(forKey: Keys.showIsland) as? Bool ?? true
-        islandAlwaysVisible = defaults.object(forKey: Keys.islandAlwaysVisible) as? Bool ?? true
+        hideFromDockWhenClosed = defaults.object(forKey: Keys.hideFromDockWhenClosed) as? Bool ?? true
+        alwaysHideFromDock = defaults.object(forKey: Keys.alwaysHideFromDock) as? Bool ?? false
+
+        if defaults.object(forKey: "islandAlwaysVisibleDefaultMigrated") == nil {
+            defaults.set(false, forKey: Keys.islandAlwaysVisible)
+            defaults.set(true, forKey: "islandAlwaysVisibleDefaultMigrated")
+            islandAlwaysVisible = false
+        } else {
+            islandAlwaysVisible = defaults.object(forKey: Keys.islandAlwaysVisible) as? Bool ?? false
+        }
         formatAsMarkdown = defaults.object(forKey: Keys.formatAsMarkdown) as? Bool ?? true
         polishTerms = defaults.object(forKey: Keys.polishTerms) as? Bool ?? true
         softenLanguage = defaults.object(forKey: Keys.softenLanguage) as? Bool ?? false
@@ -107,6 +132,8 @@ final class AppSettings {
         static let recognitionMode = "recognitionMode"
         static let captureSystemAudio = "captureSystemAudio"
         static let showIsland = "showIsland"
+        static let hideFromDockWhenClosed = "hideFromDockWhenClosed"
+        static let alwaysHideFromDock = "alwaysHideFromDock"
         static let islandAlwaysVisible = "islandAlwaysVisible"
         static let formatAsMarkdown = "formatAsMarkdown"
         static let polishTerms = "polishTerms"
